@@ -23,7 +23,7 @@
 | `backtest.py` | точность прогноза: прогноз со среза на 12 мес. назад против продаж после него, WAPE и bias против M12 и LY (только дашборд) |
 | `dashboard.py` | HTML-дашборд из `templates/dashboard.html` |
 | `report.py`, `cli.py` | `summary.md`; команда запуска |
-| `notify.py` | сводка из `summary.md` в Telegram после пересчёта |
+| `notify.py` | сообщение в Telegram после пересчёта: «разместить сегодня», топ-3 поставщика, риски, что изменилось, кнопка на дашборд |
 
 Промпты модели — в `zakupki/prompts/`, навык — `.claude/skills/plan-zakupok/`.
 
@@ -33,7 +33,7 @@
 
 ```
 python -m zakupki run --data data/raw/share --today 2026-08-13 --no-llm   # exit 0, 791 SKU, к заказу 41 335 шт. (сейчас 34 994)
-python -m ruff check zakupki tests && python -m pytest -q                   # 226 passed
+python -m ruff check zakupki tests && python -m pytest -q                   # 229 passed
 python -m pytest -q tests/test_plan.py                                      # один файл
 python -m zakupki run --data DIR [--today YYYY-MM-DD] [--out out] [--no-llm] [--min-markup N] [--cover-days N] [--z N]
 ```

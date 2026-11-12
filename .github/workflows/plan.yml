@@ -63,7 +63,10 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: summary
-          path: out/summary.md
+          path: |
+            out/summary.md
+            out/plan.csv
+            out/risks.csv
 
   deploy:
     needs: plan
@@ -94,4 +97,4 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python -m zakupki.notify --summary summary.md --url "${{ needs.deploy.outputs.page_url }}"
+        run: python -m zakupki.notify --summary summary.md --plan plan.csv --risks risks.csv --url "${{ needs.deploy.outputs.page_url }}"

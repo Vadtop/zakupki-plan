@@ -59,9 +59,9 @@ python -m zakupki run --data data/raw/share --today 2026-08-13
 
 - **Windows:** Планировщик заданий запускает `scripts/run_daily.ps1`, инструкция — в шапке файла. Журнал пишется в `out/run_daily.log`.
 - **Linux:** `scripts/cron.example`.
-- **GitHub Actions:** `.github/workflows/plan.yml` запускается каждое утро или кнопкой Run workflow. Три шага: **plan** считает план по выгрузке из `data/raw/share/` (новую выгрузку кладут туда коммитом), **deploy** публикует дашборд на GitHub Pages, **notify** присылает сводку в Telegram: сколько разместить сегодня, где дефицит, что изменилось с прошлого запуска, ссылку на дашборд. История между запусками хранится через `actions/cache`.
+- **GitHub Actions:** `.github/workflows/plan.yml` запускается каждое утро или кнопкой Run workflow. Три шага: **plan** считает план по выгрузке из `data/raw/share/` (новую выгрузку кладут туда коммитом), **deploy** публикует дашборд на GitHub Pages, **notify** присылает сводку в Telegram: сколько разместить сегодня и у каких поставщиков больше всего, где дефицит и просрочки, что изменилось с прошлого запуска, ссылку на дашборд. История между запусками хранится через `actions/cache`.
 
-Дату расчёта передают `-Today` или переменная `DATA_DATE`. Для Telegram нужны секреты репозитория `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID`. Без них шаг notify пропускается. Вручную: `python -m zakupki.notify --summary out/summary.md --url <ссылка>`.
+Дату расчёта передают `-Today` или переменная `DATA_DATE`. Для Telegram нужны секреты репозитория `TELEGRAM_BOT_TOKEN` и `TELEGRAM_CHAT_ID`. Без них шаг notify пропускается. Вручную: `python -m zakupki.notify --url <ссылка>` (по умолчанию берёт `out/summary.md`, `out/plan.csv`, `out/risks.csv`).
 
 ## Точность прогноза
 
