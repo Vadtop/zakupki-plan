@@ -1,0 +1,32 @@
+[project]
+name = "zakupki"
+version = "0.1.0"
+description = "Планирование закупок импортёра по выгрузке ERP"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas>=2.2",
+    "numpy>=1.26",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["zakupki"]
+
+[tool.setuptools.package-data]
+zakupki = ["templates/*.html", "prompts/*.md"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

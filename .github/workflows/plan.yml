@@ -1,0 +1,97 @@
+name: Пересчёт плана закупок
+
+on:
+  schedule:
+    - cron: "0 4 * * *"
+  workflow_dispatch:
+    inputs:
+      data_date:
+        description: "Дата расчёта ГГГГ-ММ-ДД (пусто — переменная репозитория DATA_DATE)"
+        required: false
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pandas numpy
+      # Снимки прошлых запусков: без них «Что изменилось» всегда пишет «прошлого запуска нет».
+      # Ключ уникален на запуск, restore-keys берёт самый свежий из прошлых.
+      - name: История прошлых запусков
+        uses: actions/cache/restore@v4
+        with:
+          path: out/history
+          key: history-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: history-
+      - name: Расчёт плана
+        env:
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL }}
+          # Дата расчёта = дата выгрузки; задаётся переменной репозитория DATA_DATE или при ручном запуске.
+          DATA_DATE: ${{ inputs.data_date || vars.DATA_DATE }}
+        run: |
+          if [ -n "$DATA_DATE" ]; then
+            python -m zakupki run --data data/raw/share --today "$DATA_DATE"
+          else
+            python -m zakupki run --data data/raw/share
+          fi
+      - name: Сохранение истории
+        uses: actions/cache/save@v4
+        with:
+          path: out/history
+          key: history-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Страница для публикации
+        run: |
+          mkdir site
+          cp out/dashboard.html site/index.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - uses: actions/upload-artifact@v4
+        with:
+          name: summary
+          path: out/summary.md
+
+  deploy:
+    needs: plan
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  # Сводка в Telegram: секреты TELEGRAM_BOT_TOKEN и TELEGRAM_CHAT_ID; без них шаг пропускается.
+  notify:
+    needs: deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pandas numpy
+      - uses: actions/download-artifact@v4
+        with:
+          name: summary
+      - name: Сводка в Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python -m zakupki.notify --summary summary.md --url "${{ needs.deploy.outputs.page_url }}"

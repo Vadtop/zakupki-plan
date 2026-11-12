@@ -1,0 +1,1706 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>План закупок</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Цвета — только переменные: светлая тема по умолчанию, тёмная — по системе или переключателю */
+:root {
+  --bg:#f3f5f9; --surface:#ffffff; --surface-2:#f6f8fb; --hover:#eef3fd;
+  --ink:#0d1526; --ink-2:#334155; --muted:#5f6b80; --line:#dfe5ee; --line-2:#edf1f6;
+  --accent:#2563eb; --accent-ink:#ffffff; --focus:rgba(37,99,235,.35);
+  --shadow:0 1px 2px rgba(15,23,42,.04),0 6px 24px rgba(15,23,42,.05);
+  --shadow-lg:0 12px 40px rgba(15,23,42,.18);
+  --st-now:#dc2626; --st-short:#ea580c; --st-plan:#2563eb; --st-excess:#7c3aed;
+  --st-ok:#16a34a; --st-low:#64748b; --st-dead:#94a3b8;
+  --chart-hist:#cbd5e1; --chart-arr:#d97706;
+  --heat:#2563eb; --scrim:rgba(15,23,42,.45);
+  --radius:16px; --radius-sm:11px; --top-h:60px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#0a0f1c; --surface:#121a2e; --surface-2:#18223a; --hover:#1c2843;
+    --ink:#eef2f8; --ink-2:#c3ccdb; --muted:#8a96ad; --line:#24304a; --line-2:#1b2540;
+    --accent:#6ea8ff; --accent-ink:#06101f; --focus:rgba(110,168,255,.4);
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 24px rgba(0,0,0,.25); --shadow-lg:0 16px 48px rgba(0,0,0,.55);
+    --st-now:#ff6b6b; --st-short:#ff9f43; --st-plan:#60a5fa; --st-excess:#b197fc;
+    --st-ok:#4ade80; --st-low:#94a3b8; --st-dead:#7c879b;
+    --chart-hist:#33405a; --chart-arr:#ffd166; --heat:#6ea8ff; --scrim:rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"] {
+  --bg:#0a0f1c; --surface:#121a2e; --surface-2:#18223a; --hover:#1c2843;
+  --ink:#eef2f8; --ink-2:#c3ccdb; --muted:#8a96ad; --line:#24304a; --line-2:#1b2540;
+  --accent:#6ea8ff; --accent-ink:#06101f; --focus:rgba(110,168,255,.4);
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 24px rgba(0,0,0,.25); --shadow-lg:0 16px 48px rgba(0,0,0,.55);
+  --st-now:#ff6b6b; --st-short:#ff9f43; --st-plan:#60a5fa; --st-excess:#b197fc;
+  --st-ok:#4ade80; --st-low:#94a3b8; --st-dead:#7c879b;
+  --chart-hist:#33405a; --chart-arr:#ffd166; --heat:#6ea8ff; --scrim:rgba(0,0,0,.6);
+}
+* { box-sizing:border-box; }
+html { scroll-behavior:smooth; -webkit-text-size-adjust:100%; }
+body { margin:0; background:var(--bg); color:var(--ink);
+  font:14px/1.5 "Onest",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased; }
+button, input, select { font:inherit; color:inherit; }
+:focus-visible { outline:3px solid var(--focus); outline-offset:1px; }
+.vh { position:absolute !important; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
+.num, .tnum { font-variant-numeric:tabular-nums; }
+.mono { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12.5px; }
+
+/* Верхняя панель */
+.topbar { position:sticky; top:0; z-index:20; background:color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter:saturate(1.6) blur(10px); -webkit-backdrop-filter:saturate(1.6) blur(10px); border-bottom:1px solid var(--line); }
+.topbar-in { max-width:1320px; margin:0 auto; padding:0 24px; height:var(--top-h); display:flex; align-items:center; gap:20px; }
+.brand { display:flex; align-items:center; gap:10px; font-weight:650; white-space:nowrap; letter-spacing:-.01em; }
+.brand-mark { width:28px; height:28px; border-radius:8px; background:var(--accent); color:var(--accent-ink);
+  display:grid; place-items:center; flex:none; }
+.nav { display:flex; gap:2px; overflow-x:auto; scrollbar-width:none; flex:1; min-width:0; }
+.nav::-webkit-scrollbar { display:none; }
+.nav a { padding:7px 9px; border-radius:8px; color:var(--muted); text-decoration:none; white-space:nowrap; font-size:13.5px; font-weight:500; }
+.nav a:hover { color:var(--ink); background:var(--hover); }
+.nav a.active { color:var(--accent); background:color-mix(in srgb, var(--accent) 11%, transparent); }
+.icon-btn { width:36px; height:36px; border-radius:9px; border:1px solid var(--line); background:var(--surface);
+  display:grid; place-items:center; cursor:pointer; flex:none; color:var(--ink-2); }
+.icon-btn:hover { background:var(--hover); }
+.icon-btn svg { width:18px; height:18px; }
+.i-sun { display:none; }
+:root[data-theme="dark"] .i-sun { display:block; } :root[data-theme="dark"] .i-moon { display:none; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .i-sun { display:block; } :root:not([data-theme="light"]) .i-moon { display:none; } }
+
+main { max-width:1320px; margin:0 auto; padding:24px 24px 64px; }
+section, #top { scroll-margin-top:calc(var(--top-h) + 14px); }
+.card { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); }
+.sec { margin-top:28px; }
+.sec-head { display:flex; align-items:flex-end; justify-content:space-between; gap:12px; flex-wrap:wrap; margin:0 2px 12px; }
+.sec-head h2 { font-size:19px; line-height:1.25; margin:0; letter-spacing:-.015em; font-weight:650; }
+.sec-head p { margin:3px 0 0; color:var(--muted); font-size:13px; }
+.grid { display:grid; gap:16px; grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr)); }
+.grid > * { min-width:0; }
+.grid.two { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.grid.two .wide { grid-column:1 / -1; }
+.pad { padding:18px 20px; }
+h3 { font-size:15px; margin:0; font-weight:620; letter-spacing:-.01em; }
+.muted { color:var(--muted); }
+.note { color:var(--muted); font-size:12.5px; margin-top:10px; }
+
+/* Первый экран */
+.btn { display:inline-flex; align-items:center; gap:7px; height:36px; padding:0 14px; border-radius:var(--radius-sm); border:1px solid var(--line);
+  background:var(--surface); color:var(--ink); cursor:pointer; font-weight:600; font-size:13.5px; white-space:nowrap; text-decoration:none; }
+.btn:hover { background:var(--hover); }
+.btn.primary { background:var(--accent); border-color:var(--accent); color:var(--accent-ink); }
+.btn.primary:hover { filter:brightness(1.07); }
+.btn.lg { height:44px; padding:0 18px; font-size:14px; }
+.btn svg { width:16px; height:16px; }
+.dot { width:8px; height:8px; border-radius:50%; background:var(--c, var(--muted)); flex:none; }
+.hero { display:flex; justify-content:space-between; align-items:center; gap:16px 24px; flex-wrap:wrap; padding:22px 26px;
+  border-left:4px solid var(--accent); }
+.hero-main { min-width:0; flex:1 1 520px; }
+.eyebrow { display:flex; align-items:center; gap:8px 12px; flex-wrap:wrap; font-size:12.5px; font-weight:700; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--accent); }
+.chip-date { display:inline-flex; align-items:center; gap:8px; padding:3px 10px; border-radius:99px; text-transform:none; letter-spacing:0;
+  background:var(--surface-2); border:1px solid var(--line); color:var(--ink-2); font-size:12px; font-weight:500; }
+.pulse { width:7px; height:7px; border-radius:50%; background:var(--st-ok); box-shadow:0 0 0 3px color-mix(in srgb, var(--st-ok) 22%, transparent); }
+.hero h1 { font-size:34px; line-height:1.15; margin:6px 0 4px; letter-spacing:-.03em; font-weight:800; }
+.hero h1 .u { color:var(--muted); font-weight:600; }
+.hero h1 .orphan { font-size:.6em; letter-spacing:-.01em; white-space:nowrap; }
+.hero-sub { color:var(--ink-2); font-size:14.5px; margin:0; max-width:80ch; }
+.hero-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.changes { display:flex; gap:6px 10px; align-items:center; flex-wrap:wrap; margin-top:12px; padding:10px 16px; font-size:13px;
+  color:var(--ink-2); text-decoration:none; }
+.changes:hover { border-color:color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.changes b { font-weight:700; color:var(--ink); }
+.changes .sep { color:var(--muted); }
+.changes .go { margin-left:auto; color:var(--accent); font-weight:600; white-space:nowrap; }
+.kpis { display:grid; gap:12px; grid-template-columns:repeat(6,minmax(0,1fr)); margin-top:12px; }
+.kpi { font:inherit; color:inherit; text-align:left; padding:14px 16px; border-radius:var(--radius); border:1px solid var(--line);
+  border-top:3px solid var(--c, var(--line)); background:var(--surface); box-shadow:var(--shadow); cursor:pointer; display:flex;
+  flex-direction:column; gap:2px; min-width:0; transition:border-color .15s, transform .15s; }
+.kpi:hover { transform:translateY(-1px); border-color:color-mix(in srgb, var(--c, var(--accent)) 55%, var(--line)); border-top-color:var(--c, var(--line)); }
+.kpi.on { box-shadow:0 0 0 3px color-mix(in srgb, var(--c, var(--accent)) 22%, transparent); }
+.kpi .k-lbl { color:var(--muted); font-size:12.5px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.kpi .k-val { font-size:30px; font-weight:800; letter-spacing:-.03em; line-height:1.15; font-variant-numeric:tabular-nums; }
+.kpi .k-sub { color:var(--muted); font-size:12px; overflow:hidden; text-overflow:ellipsis; font-variant-numeric:tabular-nums; }
+.kpi.hot .k-val { color:var(--st-now); }
+.t-acc { --c:var(--accent); } .t-price { --c:var(--chart-arr); }
+.act { display:flex; gap:14px; align-items:flex-start; margin-top:12px; padding:14px 18px;
+  background:color-mix(in srgb, var(--st-now) 6%, var(--surface)); border-color:color-mix(in srgb, var(--st-now) 30%, var(--line)); }
+.act .ic { width:30px; height:30px; border-radius:8px; background:var(--st-now); color:var(--surface); display:grid; place-items:center; font-weight:800; flex:none; }
+.act b { display:block; margin-bottom:2px; }
+.act p { margin:0; font-size:13.5px; color:var(--ink-2); }
+.sku-link { border:0; background:none; padding:0; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12.5px;
+  color:var(--accent); cursor:pointer; text-decoration:underline; text-underline-offset:2px; }
+.cols { display:grid; grid-template-columns:minmax(0,1.55fr) minmax(0,1fr); gap:12px; margin-top:12px; }
+.cols > * { min-width:0; }
+.box { padding:16px 18px; }
+.box .bh { display:flex; justify-content:space-between; align-items:baseline; gap:10px; margin-bottom:8px; flex-wrap:wrap; }
+.box .bh h3 { font-size:16px; }
+.box .bh a, .more-link { font-size:13px; color:var(--accent); text-decoration:none; font-weight:600; white-space:nowrap; }
+.box .bh a:hover, .more-link:hover { text-decoration:underline; }
+.hero-po th { position:static; background:var(--surface); }
+.hero-po td, .hero-po th { padding:7px 8px; }
+.hero-po .sup { font-weight:650; }
+.rel { display:inline-block; font-size:11px; padding:1px 6px; border-radius:5px; margin-left:6px; font-weight:600; vertical-align:1px;
+  background:color-mix(in srgb, var(--st-short) 14%, transparent); color:color-mix(in srgb, var(--st-short) 72%, var(--ink)); }
+.arr-scale { position:relative; width:110px; height:14px; }
+.arr-scale .ax { position:absolute; left:0; right:0; top:6px; height:2px; background:var(--line-2); border-radius:1px; }
+.arr-scale .w { position:absolute; top:2px; height:10px; border-radius:3px; background:color-mix(in srgb, var(--chart-arr) 45%, transparent);
+  border:1px solid var(--chart-arr); }
+.arr-scale .t { position:absolute; left:0; top:0; width:2px; height:14px; background:var(--accent); }
+.hero-po .dz { color:var(--st-now); font-weight:700; }
+.hero-po .btn { height:28px; padding:0 9px; font-size:12.5px; }
+.hero-po .btn svg { width:14px; height:14px; }
+.hcal svg { width:100%; height:auto; display:block; }
+.hcal .b { fill:color-mix(in srgb, var(--accent) 28%, transparent); }
+.hcal .b.now { fill:var(--accent); }
+.hcal .m { fill:var(--muted); font-size:11px; }
+.hcal .v { fill:var(--ink-2); font-size:11px; font-weight:700; }
+.hcal-l { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; font-size:12.5px; color:var(--muted); margin-top:6px; }
+.hcal-l i { display:inline-block; width:10px; height:10px; border-radius:3px; background:var(--accent); margin-right:6px; vertical-align:-1px; }
+.tag-now { display:inline-block; font-size:11px; padding:1px 6px; border-radius:5px; margin-left:6px; font-weight:600;
+  background:color-mix(in srgb, var(--accent) 14%, transparent); color:color-mix(in srgb, var(--accent) 85%, var(--ink)); }
+.hcal table { margin-top:8px; }
+.hcal table th { position:static; background:var(--surface); }
+.hcal table td, .hcal table th { padding:7px 8px; }
+.sum-text { margin-top:12px; }
+.sum-text > summary { list-style:none; cursor:pointer; padding:13px 18px; display:flex; align-items:center; gap:10px; color:var(--ink-2); }
+.sum-text > summary::-webkit-details-marker { display:none; }
+.sum-text > summary:hover { background:var(--hover); border-radius:var(--radius); }
+.sum-text > summary .chev { width:18px; height:18px; color:var(--muted); transition:transform .15s; flex:none; }
+.sum-text[open] > summary .chev { transform:rotate(90deg); }
+.sum-text > summary h3 { font-size:14px; font-weight:600; }
+.summary { white-space:pre-line; color:var(--ink-2); font-size:14px; line-height:1.65; margin:0; padding:0 20px 18px 46px; }
+
+/* Статусы: единая палитра */
+.s-now { --c:var(--st-now); } .s-short { --c:var(--st-short); } .s-plan { --c:var(--st-plan); } .s-excess { --c:var(--st-excess); }
+.s-ok { --c:var(--st-ok); } .s-low { --c:var(--st-low); } .s-dead { --c:var(--st-dead); }
+.badge { display:inline-flex; align-items:center; gap:6px; padding:2px 9px 2px 8px; border-radius:99px; font-size:12px; font-weight:600; white-space:nowrap;
+  background:color-mix(in srgb, var(--c, var(--muted)) 13%, transparent); color:color-mix(in srgb, var(--c, var(--muted)) 82%, var(--ink)); }
+.badge::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--c, var(--muted)); }
+.flag { display:inline-block; margin-left:6px; padding:1px 7px; border-radius:6px; font-size:11px; font-weight:550; color:var(--muted);
+  border:1px dashed var(--line); white-space:nowrap; vertical-align:1px; }
+.alt-mark { display:inline-block; margin-left:6px; padding:0 5px; border-radius:5px; font-size:10.5px; font-weight:650; vertical-align:1px;
+  color:var(--st-short); border:1px solid color-mix(in srgb, var(--st-short) 45%, transparent); cursor:help; }
+.flag.alt { color:var(--st-short); border-color:color-mix(in srgb, var(--st-short) 55%, transparent); }
+.po-row .wt { display:block; margin-top:2px; font-family:"Onest",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; font-size:11.5px; font-weight:500; color:var(--muted); }
+.hero-alt { color:var(--muted); font-size:12.5px; margin:6px 0 0; max-width:80ch; }
+.asap { display:inline-block; padding:1px 8px; border-radius:6px; font-weight:650; font-size:12.5px;
+  color:var(--st-now); background:color-mix(in srgb, var(--st-now) 12%, transparent); }
+
+/* Панель фильтров */
+.toolbar { display:flex; flex-wrap:wrap; gap:10px; align-items:center; padding:14px 16px; border-bottom:1px solid var(--line); }
+.chips { display:flex; gap:6px; flex-wrap:wrap; padding:12px 16px 0; }
+.chip { display:inline-flex; align-items:center; gap:7px; height:30px; padding:0 11px; border-radius:99px; border:1px solid var(--line);
+  background:var(--surface); cursor:pointer; font-size:13px; font-weight:550; color:var(--ink-2); white-space:nowrap; }
+.chip:hover { background:var(--hover); }
+.chip .n { color:var(--muted); font-weight:500; font-variant-numeric:tabular-nums; }
+.chip.on { border-color:var(--c, var(--accent)); background:color-mix(in srgb, var(--c, var(--accent)) 11%, var(--surface)); color:var(--ink); }
+.field { display:inline-flex; align-items:center; gap:8px; height:36px; padding:0 10px; border:1px solid var(--line); border-radius:9px; background:var(--surface); }
+.field svg { width:16px; height:16px; color:var(--muted); flex:none; }
+.field input, .field select { border:0; outline:0; background:transparent; height:34px; min-width:0; }
+.field input { width:190px; }
+.field:focus-within { border-color:var(--accent); box-shadow:0 0 0 3px var(--focus); }
+.toolbar .spacer { flex:1; }
+.count { color:var(--muted); font-size:13px; font-variant-numeric:tabular-nums; }
+
+/* Таблицы */
+.scroll { overflow:auto; max-width:100%; -webkit-overflow-scrolling:touch; }
+.scroll.tall { max-height:620px; }
+.scroll.mid { max-height:440px; }
+table { border-collapse:separate; border-spacing:0; width:100%; font-size:13px; }
+th, td { padding:9px 10px; text-align:left; vertical-align:middle; white-space:nowrap; border-bottom:1px solid var(--line-2); }
+th { position:sticky; top:0; z-index:2; background:var(--surface-2); color:var(--muted); font-weight:600; font-size:12px;
+  border-bottom:1px solid var(--line); }
+th.num, td.num { text-align:right; font-variant-numeric:tabular-nums; }
+th.sortable { cursor:pointer; user-select:none; }
+th.sortable:hover { color:var(--ink); }
+th .arr { display:inline-block; width:10px; color:var(--accent); }
+tbody tr:last-child td { border-bottom:0; }
+tr.click { cursor:pointer; }
+tr.click:hover td { background:var(--hover); }
+td.strong { font-weight:650; }
+#tbl th.num { white-space:normal; min-width:64px; max-width:96px; line-height:1.3; vertical-align:bottom; }
+td.cat { white-space:normal; min-width:110px; max-width:160px; line-height:1.35; }
+td.ex { white-space:normal; min-width:240px; max-width:380px; color:var(--ink-2); }
+.clamp { display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.ex-full { display:none; }
+.empty { color:var(--muted); padding:18px 20px; }
+/* SKU закреплён слева при горизонтальной прокрутке */
+#tbl th:first-child, #tbl td:first-child { position:sticky; left:0; z-index:1; background:var(--surface); }
+#tbl th:first-child { z-index:3; background:var(--surface-2); }
+#tbl tr.click:hover td:first-child { background:var(--hover); }
+.mini thead th { background:var(--surface); }
+.mini tr.extra { display:none; }
+.mini.all tr.extra { display:table-row; }
+.box-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; padding:16px 18px 12px; }
+.box-head p { margin:3px 0 0; color:var(--muted); font-size:12.5px; }
+.pill { display:inline-block; min-width:26px; text-align:center; padding:1px 8px; border-radius:99px; font-size:12px; font-weight:650;
+  font-variant-numeric:tabular-nums; background:color-mix(in srgb, var(--c, var(--muted)) 13%, transparent);
+  color:color-mix(in srgb, var(--c, var(--muted)) 82%, var(--ink)); }
+.box-foot { border-top:1px solid var(--line-2); padding:8px 12px; }
+.link-btn { border:0; background:transparent; color:var(--accent); font-weight:600; cursor:pointer; padding:6px 8px; border-radius:7px; font-size:13px; }
+.link-btn:hover { background:var(--hover); }
+.bar { display:flex; align-items:center; gap:8px; justify-content:flex-end; }
+.bar i { display:block; height:6px; border-radius:99px; background:var(--c, var(--accent)); min-width:2px; }
+.bar .track { width:84px; height:6px; border-radius:99px; background:var(--line-2); display:flex; flex:none; }
+
+/* Календарь */
+.cal { padding:20px 20px 14px; }
+.cal-bars { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:8px; align-items:end; height:220px; }
+.cal-col { display:flex; flex-direction:column; justify-content:flex-end; align-items:stretch; height:100%; min-width:0; }
+.cal-val { text-align:center; font-size:12px; font-weight:650; font-variant-numeric:tabular-nums; margin-bottom:5px; white-space:nowrap; color:var(--ink-2); }
+.cal-bar { border-radius:7px 7px 3px 3px; background:color-mix(in srgb, var(--st-plan) 75%, transparent); min-height:3px; }
+.cal-col.now .cal-bar { background:var(--st-now); }
+.cal-col.now .cal-val { color:var(--st-now); }
+.cal-col.zero .cal-bar { background:var(--line); }
+.cal-axis { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:8px; border-top:1px solid var(--line); padding-top:8px; margin-top:2px; }
+.cal-axis div { text-align:center; font-size:12px; min-width:0; }
+.cal-axis b { display:block; font-weight:600; white-space:nowrap; }
+.cal-axis span { color:var(--muted); font-variant-numeric:tabular-nums; white-space:nowrap; font-size:11.5px; }
+.cal-axis .now b { color:var(--st-now); }
+.legend { display:flex; gap:16px; flex-wrap:wrap; color:var(--muted); font-size:12.5px; margin-top:12px; }
+.legend span { display:inline-flex; align-items:center; gap:6px; }
+.sw { width:10px; height:10px; border-radius:3px; background:var(--c); }
+
+/* Сезонность */
+.heat td.h { text-align:center; font-variant-numeric:tabular-nums; font-size:12.5px; padding:8px 4px; min-width:46px; border-bottom:2px solid var(--surface); }
+.heat td.h.peak { font-weight:750; }
+.heat th.c { text-align:center; padding:9px 4px; }
+.heat td:first-child { font-weight:550; }
+
+/* Что изменилось */
+.diff-line { display:flex; align-items:center; gap:12px; padding:16px 20px; color:var(--ink-2); }
+.diff-line svg { width:20px; height:20px; color:var(--muted); flex:none; }
+.diff-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; padding:16px 18px; }
+.diff-stat { border:1px solid var(--line); border-radius:11px; padding:10px 12px; }
+.diff-stat b { display:block; font-size:22px; font-variant-numeric:tabular-nums; }
+.diff-stat span { color:var(--muted); font-size:12.5px; }
+
+/* Карточка SKU */
+#scrim { position:fixed; inset:0; background:var(--scrim); opacity:0; pointer-events:none; transition:opacity .2s; z-index:30; }
+#scrim.open { opacity:1; pointer-events:auto; }
+#drawer { position:fixed; top:0; right:0; bottom:0; width:min(640px,100vw); background:var(--surface); z-index:31; box-shadow:var(--shadow-lg);
+  transform:translateX(102%); transition:transform .25s cubic-bezier(.2,.8,.2,1); display:flex; flex-direction:column; border-left:1px solid var(--line); }
+#drawer.open { transform:none; }
+.dr-head { padding:18px 22px 14px; border-bottom:1px solid var(--line); display:flex; gap:12px; align-items:flex-start; }
+.dr-head h2 { margin:0; font-size:20px; letter-spacing:-.015em; }
+.dr-head .sub { color:var(--muted); font-size:13px; margin-top:3px; }
+.dr-head .badges { margin-top:8px; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+.dr-head .icon-btn { margin-left:auto; }
+.dr-body { overflow:auto; padding:18px 22px 28px; flex:1; }
+.stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
+.stat { background:var(--surface-2); border:1px solid var(--line-2); border-radius:11px; padding:10px 12px; min-width:0; }
+.stat span { display:block; color:var(--muted); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.stat b { display:block; font-size:18px; font-variant-numeric:tabular-nums; letter-spacing:-.01em; margin-top:1px; white-space:nowrap; }
+.stat.hl { background:color-mix(in srgb, var(--c, var(--accent)) 9%, var(--surface)); border-color:color-mix(in srgb, var(--c, var(--accent)) 30%, transparent); }
+.stat.hl b { color:color-mix(in srgb, var(--c, var(--accent)) 85%, var(--ink)); }
+.explain { margin:16px 0 0; padding:13px 15px; border-radius:11px; border-left:3px solid var(--c, var(--accent));
+  background:var(--surface-2); color:var(--ink-2); line-height:1.6; }
+.dr-body h3 { margin:20px 0 6px; }
+#chart { height:340px; }
+.chart-off { display:grid; place-items:center; height:140px; border:1px dashed var(--line); border-radius:11px; color:var(--muted); text-align:center; padding:12px; }
+
+/* Почему столько: расшифровка количества в карточке SKU */
+.why { margin-top:16px; border:1px solid var(--line); border-radius:11px; overflow:hidden; }
+.why-row { display:grid; grid-template-columns:22px minmax(0,1fr) auto; gap:4px 10px; align-items:baseline; padding:9px 14px;
+  border-bottom:1px solid var(--line-2); }
+.why-row:last-child { border-bottom:0; }
+.why-row .op { color:var(--muted); font-weight:700; text-align:center; font-variant-numeric:tabular-nums; }
+.why-row .t { min-width:0; }
+.why-row .t small { display:block; color:var(--muted); font-size:12px; line-height:1.4; margin-top:1px; }
+.why-row .v { font-variant-numeric:tabular-nums; font-weight:600; white-space:nowrap; text-align:right; }
+.why-row.sum { background:var(--surface-2); }
+.why-row.sum .t, .why-row.sum .v { font-weight:650; }
+.why-row.total { background:color-mix(in srgb, var(--c, var(--accent)) 9%, var(--surface)); }
+.why-row.total .t, .why-row.total .v { font-weight:700; color:color-mix(in srgb, var(--c, var(--accent)) 85%, var(--ink)); }
+.why-row.total .v { font-size:16px; }
+.why-note { padding:12px 14px; color:var(--ink-2); line-height:1.55; }
+.why-note b { font-weight:650; }
+
+/* Заказы поставщикам */
+.po-grid { display:grid; grid-template-columns:26px minmax(120px,1.2fr) 70px 90px minmax(100px,.9fr) minmax(150px,1.3fr) 92px 96px 176px;
+  gap:0 12px; align-items:center; }
+.po-head { padding:10px 16px; background:var(--surface-2); color:var(--muted); font-size:12px; font-weight:600; border-bottom:1px solid var(--line); }
+.po-head .num, .po-row .num { text-align:right; font-variant-numeric:tabular-nums; }
+.po-item { border-bottom:1px solid var(--line-2); }
+.po-item:last-child { border-bottom:0; }
+.po-row { padding:10px 16px; cursor:pointer; font-size:13px; }
+.po-row:hover { background:var(--hover); }
+.po-row .chev { width:18px; height:18px; color:var(--muted); transition:transform .15s; }
+.po-item.open .chev { transform:rotate(90deg); }
+.po-item.open > .po-row { background:var(--surface-2); }
+.po-row .sup { font-weight:650; }
+.po-row .lbl { display:none; }
+.po-row .warn { color:var(--st-short); font-weight:650; }
+.po-row .btn { height:30px; padding:0 10px; font-size:12.5px; }
+.po-list { display:none; padding:4px 16px 14px 54px; }
+.po-item.open .po-list { display:block; }
+.po-list table { font-size:12.5px; }
+.po-list .scroll.mid { max-height:none; }
+.po-row .c-csv { text-align:right; }
+.po-list td, .po-list th { padding:7px 10px; }
+.po-list th { position:static; }
+.po-later { border-top:1px solid var(--line); }
+.po-later > summary { list-style:none; cursor:pointer; padding:13px 16px; display:flex; align-items:center; gap:10px; color:var(--ink-2); font-weight:550; }
+.po-later > summary::-webkit-details-marker { display:none; }
+.po-later > summary:hover { background:var(--hover); }
+.po-later > summary .chev { width:18px; height:18px; color:var(--muted); transition:transform .15s; flex:none; }
+.po-later[open] > summary .chev { transform:rotate(90deg); }
+.po-later > summary .muted { font-weight:500; }
+
+/* Как считается */
+.acc-lead { margin:0; font-size:14.5px; line-height:1.55; color:var(--ink); max-width:90ch; }
+.acc-grid { margin-top:14px; }
+.acc-grid .card { box-shadow:none; }
+.acc-grid td.best { font-weight:700; }
+.rules { margin:0; padding:18px 22px 6px 42px; display:grid; gap:10px; color:var(--ink-2); line-height:1.6; }
+.rules li::marker { color:var(--muted); font-weight:650; font-variant-numeric:tabular-nums; }
+.run-note { margin:12px 18px 18px; padding:12px 14px; border-radius:11px; background:var(--surface-2); border:1px solid var(--line-2);
+  color:var(--ink-2); line-height:1.55; display:flex; gap:10px; align-items:flex-start; }
+.run-note svg { width:18px; height:18px; color:var(--accent); flex:none; margin-top:2px; }
+.run-note code { font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; font-size:12.5px; overflow-wrap:anywhere; }
+
+/* Телефон */
+@media (max-width:1100px) {
+  .po-grid { grid-template-columns:26px minmax(0,1.3fr) 60px 80px minmax(0,1fr) minmax(0,1.3fr) 80px 176px; }
+  .po-grid .c-rel { display:none; }
+}
+@media (max-width:1100px) { .kpis { grid-template-columns:repeat(3,minmax(0,1fr)); } .cols { grid-template-columns:minmax(0,1fr); } }
+@media (max-width:720px) {
+  :root { --top-h:auto; }
+  .topbar-in { flex-wrap:wrap; height:auto; padding:10px 16px 0; gap:6px 12px; }
+  .brand { flex:1; }
+  .nav { order:3; flex-basis:100%; margin:0 -16px; padding:0 12px 8px; }
+  section, #top { scroll-margin-top:110px; }
+  main { padding:16px 16px 48px; }
+  .hero { padding:18px 18px 18px 16px; } .hero h1 { font-size:24px; }
+  .hero-actions, .hero-actions .btn { width:100%; } .hero-actions .btn { justify-content:center; }
+  .hide-m { display:none; } .box { padding:12px; } .hero-po .csv-l { display:none; }
+  .hero-po .rel { display:block; width:fit-content; margin:2px 0 0; } .hero-po th { white-space:normal; } .changes .go { margin-left:0; }
+  .act { padding:12px 14px; gap:10px; } .summary { padding:0 16px 16px; }
+  .hero-sub { font-size:14px; }
+  .kpis { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .kpi { padding:12px 13px; } .kpi .k-val { font-size:24px; } .kpi .k-lbl { white-space:normal; }
+  .toolbar { padding:12px; } .chips { padding:12px 12px 0; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; }
+  .field { flex:1 1 100%; } .field input { width:100%; }
+  .toolbar .spacer { display:none; }
+  .cal { padding:16px 12px 12px; }
+  .cal-in { min-width:660px; padding-bottom:6px; }
+  .cal-bars { height:180px; }
+  .grid.two { grid-template-columns:minmax(0,1fr); }
+  .stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .dr-head, .dr-body { padding-left:16px; padding-right:16px; }
+  #chart { height:300px; }
+  .po-head { display:none; }
+  .po-row.po-grid { display:flex; flex-wrap:wrap; gap:8px 0; padding:12px 12px 12px 38px; position:relative; }
+  .po-row > div { flex:0 0 33.333%; padding-left:0; min-width:0; }
+  .po-row > .c-chev { position:absolute; left:12px; top:12px; }
+  .po-row > .c-sup { flex-basis:100%; }
+  .po-row > .c-csv { flex-basis:100%; text-align:left; display:none; }
+  .po-item.open .po-row > .c-csv { display:block; }
+  .po-row > .c-arr { flex-basis:66.666%; }
+  .po-row .lbl { display:block; color:var(--muted); font-size:11.5px; }
+  .po-grid .c-rel { display:block; }
+  .po-row .num { text-align:left; }
+  .po-list { padding:4px 12px 12px; }
+  .po-later > summary { padding:12px; flex-wrap:wrap; }
+  .po-later > summary .muted { flex-basis:100%; padding-left:28px; }
+  .rules { padding:16px 16px 4px 34px; }
+  #acc { padding:14px 12px; } .acc-grid .box-head { padding:12px 12px 8px; }
+  .acc-grid th, .acc-grid td { padding:8px 6px; font-size:12.5px; } .acc-grid th { white-space:normal; } .acc-grid td.cat { min-width:0; }
+  .run-note { margin:10px 12px 14px; }
+}
+
+/* Печать: без навигации и кнопок, таблицы целиком */
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior:auto; } *, *::before, *::after { transition:none !important; } }
+@media print {
+  :root, :root[data-theme="dark"], :root:not([data-theme="light"]) {
+    --bg:#fff; --surface:#fff; --surface-2:#f6f7f9; --hover:#f6f7f9; --ink:#000; --ink-2:#222; --muted:#555; --line:#ccc; --line-2:#e5e5e5;
+    --accent:#2563eb; --accent-ink:#fff; --shadow:none; --st-now:#dc2626; --st-short:#ea580c; --st-plan:#2563eb; --st-excess:#7c3aed;
+    --st-ok:#16a34a; --st-low:#64748b; --st-dead:#94a3b8; --chart-hist:#cbd5e1; --chart-arr:#d97706; --heat:#2563eb; }
+  *, *::before, *::after { transition:none !important; animation:none !important; }
+  body { background:#fff; font-size:11px; }
+  .topbar, #drawer, #scrim, .chips, .hero-actions, .box-foot, .icon-btn, #btn-csv, .toolbar .field, .po-row .c-csv { display:none !important; }
+  main { padding:0; max-width:none; }
+  .card { box-shadow:none; break-inside:auto; }
+  .scroll, .scroll.tall, .scroll.mid { max-height:none !important; overflow:visible !important; }
+  th { position:static; }
+  #tbl th:first-child, #tbl td:first-child { position:static; }
+  .mini tr.extra { display:table-row; }
+  .po-item[hidden] { display:block !important; }
+  .clamp { display:none; } .ex-full { display:block; }
+  .hero-po .btn, .changes .go, .hero-po th:last-child, .hero-po td:last-child { display:none !important; }
+  .sec { break-before:auto; }
+  /* Двухколоночные блоки — друг под другом, без пустых половин листа */
+  .grid, .grid.two, .cols { grid-template-columns:minmax(0,1fr) !important; }
+  .kpis { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  /* Таблицы не мельче 8 pt: страница не ужимается под ширину; второстепенные колонки главной таблицы скрыты */
+  table, th { font-size:11px; }
+  th, td { padding:5px 6px; }
+  #tbl th:nth-child(2), #tbl td:nth-child(2), #tbl th:nth-child(8), #tbl td:nth-child(8),
+  #tbl th:nth-child(9), #tbl td:nth-child(9), #tbl th:nth-child(10), #tbl td:nth-child(10) { display:none; }
+  #tbl th.num { min-width:0; }
+  td.ex { min-width:0; max-width:none; white-space:normal; }
+  .po-grid { grid-template-columns:20px minmax(0,1.2fr) 52px 60px minmax(0,.9fr) minmax(0,1.4fr) 64px 64px; gap:0 8px; }
+  .po-row { padding:7px 8px; }
+  /* Строка товара и карточки не рвутся между листами */
+  tr, .po-row, .kpi, .box, .act, .hero, .changes, .diff-stat, .rules li { break-inside:avoid; }
+  .box-head, .sec-head { break-after:avoid; }
+  /* Сводка плана в печати раскрыта */
+  .sum-text::details-content { content-visibility:visible; display:block; }
+  .sum-text > summary .chev { display:none; }
+}
+.gen-at{font-size:.85em;opacity:.65;font-weight:400}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 12l9 4 9-4"/><path d="M3 17l9 4 9-4"/></svg></span>План закупок</div>
+    <nav class="nav" id="nav" aria-label="Разделы">
+      <a href="#top">Сводка</a><a href="#sec-po" title="Заказы поставщикам">Заказы</a><a href="#sec-orders">Что заказать</a><a href="#sec-calendar">Календарь</a><a href="#sec-risks">Риски</a>
+      <a href="#sec-suppliers">Поставщики</a><a href="#sec-assort">Ассортимент</a><a href="#sec-season">Сезонность</a>
+      <a href="#sec-diff" title="Что изменилось с прошлого запуска">Изменения</a><a href="#sec-acc" title="Точность прогноза">Точность</a><a href="#sec-how" title="Как считается">Методика</a>
+    </nav>
+    <button class="icon-btn" id="theme" type="button" title="Светлая / тёмная тема" aria-label="Переключить тему">
+      <svg class="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      <svg class="i-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+<div id="top">
+  <div class="card hero" id="hero">
+    <div class="hero-main">
+      <div class="eyebrow">Разместить сегодня <span class="chip-date"><span class="pulse"></span><span id="asof"></span></span></div>
+      <h1 id="hero-title"></h1>
+      <p class="hero-sub" id="hero-sub"></p>
+      <p class="hero-alt" id="hero-alt" hidden></p>
+    </div>
+    <div class="hero-actions">
+      <a class="btn primary lg" href="#sec-po">Заказы поставщикам</a>
+      <button class="btn lg" id="hero-go" type="button">Все позиции
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+    </div>
+  </div>
+  <a class="card changes" id="hero-diff" href="#sec-diff"></a>
+  <div class="kpis" id="kpis"></div>
+  <div class="card act" id="hero-act" hidden><div class="ic" aria-hidden="true">!</div><div><b id="act-title"></b><p id="act-text"></p></div></div>
+  <div class="cols">
+    <div class="card box" id="hero-suppliers"><div class="bh"><h3>Кому заказать сегодня</h3><a href="#sec-po">все поставщики →</a></div>
+      <div class="scroll"><table class="hero-po"><thead><tr><th>Поставщик</th><th class="num">Поз.</th><th class="num">Штук</th>
+        <th class="hide-m">Приход</th><th class="hide-m" title="Окно прихода: сегодня → 8 мес."></th><th class="num">Под угрозой</th><th class="num">Файл</th></tr></thead>
+        <tbody id="hero-po"></tbody></table></div>
+      <div class="note" id="hero-po-more"></div></div>
+    <div class="card box hcal" id="hero-cal"><div class="bh"><h3>Календарь заказов на 12 мес.</h3><a href="#sec-calendar">подробнее →</a></div>
+      <div id="hero-cal-svg"></div>
+      <div class="hcal-l"><span><i></i>текущий месяц</span><span id="hero-cal-peak"></span></div>
+      <table id="hero-cal-tbl"></table>
+      <div class="note" id="hero-cal-note"></div></div>
+  </div>
+  <details class="card sum-text" id="sec-summary">
+    <summary><svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg><h3>Сводка плана</h3><span class="muted">текстом</span></summary>
+    <p class="summary" id="summary"></p>
+  </details>
+</div>
+
+<section class="sec" id="sec-po">
+  <div class="sec-head"><div><h2>Заказы поставщикам</h2>
+    <p id="po-sub">Что отправить каждому поставщику сейчас. Клик по строке — список позиций, по позиции — карточка SKU.</p></div></div>
+  <div class="card" id="po"></div>
+</section>
+
+<section class="sec" id="sec-orders">
+  <div class="sec-head"><div><h2>Что заказать</h2>
+    <p>Клик по строке — карточка SKU с графиком. «Ожидается» — штуки в пути с поправкой на надёжность поставщика.</p></div></div>
+  <div class="card">
+    <div class="chips" id="chips" role="group" aria-label="Быстрые фильтры"></div>
+    <div class="toolbar">
+      <label class="vh" for="f-status">Статус</label><select id="f-status" class="vh" tabindex="-1"></select>
+      <label class="field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="f-search" type="search" placeholder="Поиск по SKU" aria-label="Поиск по SKU" autocomplete="off"></label>
+      <label class="field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16l-6 8v6l-4-2v-4z"/></svg>
+        <select id="f-cat" aria-label="Категория"></select></label>
+      <span class="spacer"></span>
+      <span class="count" id="f-count"></span>
+      <button class="btn" id="btn-csv" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>Скачать CSV</button>
+    </div>
+    <div class="scroll tall"><table id="tbl"><thead></thead><tbody></tbody></table></div>
+  </div>
+</section>
+
+<section class="sec" id="sec-calendar">
+  <div class="sec-head"><div><h2>Календарь заказов на 12 месяцев</h2>
+    <p>Сколько штук и позиций разместить в каждом месяце.</p></div></div>
+  <div class="card cal">
+    <div class="scroll"><div class="cal-in">
+    <div class="cal-bars" id="cal-bars"></div>
+    <div class="cal-axis" id="cal-axis"></div>
+    </div></div>
+    <div class="legend"><span class="s-now"><i class="sw"></i><span id="cal-now-lbl">сразу</span></span>
+      <span class="s-plan"><i class="sw"></i>по плану</span></div>
+    <div class="note" id="cal-note"></div>
+  </div>
+</section>
+
+<section class="sec" id="sec-risks">
+  <div class="sec-head"><div><h2>Риски</h2><p>Дефицит, просроченные заказы поставщиков и лишний запас.</p></div></div>
+  <div class="grid two">
+    <div class="card"><div class="box-head s-short"><div><h3>Дефицит: склад опустеет раньше прихода заказа</h3>
+      <p>Докупить вовремя не успеваем — «дыра» в месяцах; «ожидаемые потери» — прогноз спроса за дни без товара, шт.</p></div><span class="pill" id="n-short"></span></div>
+      <div id="r-short"></div></div>
+    <div class="card"><div class="box-head s-excess"><div><h3>Избыток</h3>
+      <p id="excess-note">Запас сверх плеча и покрытия: заморожены деньги.</p></div><span class="pill" id="n-excess"></span></div>
+      <div id="r-excess"></div></div>
+    <div class="card wide"><div class="box-head s-now"><div><h3>Просроченные заказы поставщиков</h3>
+      <p id="overdue-note">Обещанная дата прошла: в расчёте приход через 30 дней.</p></div><span class="pill" id="n-overdue"></span></div>
+      <div id="r-overdue"></div></div>
+  </div>
+</section>
+
+<section class="sec" id="sec-suppliers">
+  <div class="sec-head"><div><h2>Поставщики</h2><p>Надёжность — доля полученных штук по закрытым заказам.</p></div></div>
+  <div class="card"><div id="suppliers"></div></div>
+</section>
+
+<section class="sec" id="sec-assort">
+  <div class="sec-head"><div><h2>Ассортимент вне автозаказа</h2><p>Эти позиции система не закупает — нужно решение по цене или выводу.</p></div></div>
+  <div class="grid">
+    <div class="card" id="sec-low"><div class="box-head s-low"><div><h3>На пересмотр цены</h3>
+      <p>Наценка ниже порога или не посчитана (нет себестоимости): автозаказ отключён, потребность — для справки.</p></div><span class="pill" id="n-low"></span></div>
+      <div id="low"></div></div>
+    <div class="card" id="sec-dead"><div class="box-head s-dead"><div><h3>Мёртвый ассортимент</h3>
+      <p>Нет продаж 12 месяцев: не закупать, остаток — распродать.</p><p class="muted" id="dead-note"></p></div><span class="pill" id="n-dead"></span></div>
+      <div id="dead"></div></div>
+  </div>
+</section>
+
+<section class="sec" id="sec-season">
+  <div class="sec-head"><div><h2>Сезонность категорий</h2><p>Доля годовых продаж категории по месяцам, %. Жирным — пик сезона.</p></div></div>
+  <div class="card"><div class="scroll"><table class="heat" id="tbl-season"></table></div></div>
+</section>
+
+<section class="sec" id="sec-diff">
+  <div class="sec-head"><div><h2>Что изменилось с прошлого запуска</h2></div></div>
+  <div class="card" id="diff"></div>
+</section>
+
+<section class="sec" id="sec-acc">
+  <div class="sec-head"><div><h2>Точность прогноза</h2><p>Прогноз на прошлую дату против того, что потом продали.</p></div></div>
+  <div class="card pad" id="acc"></div>
+</section>
+
+<section class="sec" id="sec-how">
+  <div class="sec-head"><div><h2>Как считается</h2><p>Правила расчёта с параметрами этого запуска.</p></div></div>
+  <div class="card"><ol class="rules" id="rules"></ol>
+    <div class="run-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg><span id="run-note"></span></div>
+  </div>
+</section>
+</main>
+
+<div id="scrim"></div>
+<aside id="drawer" aria-hidden="true" aria-labelledby="m-title" role="dialog">
+  <div class="dr-head">
+    <div><h2 id="m-title" class="mono" style="font-size:19px"></h2><div class="sub" id="m-sub"></div><div class="badges" id="m-badges"></div></div>
+    <button class="icon-btn" id="m-close" type="button" aria-label="Закрыть"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="dr-body" id="m-body">
+    <div class="stats" id="m-stats"></div>
+    <div class="explain" id="m-explain"></div>
+    <h3>Почему столько</h3>
+    <div class="why" id="m-why"></div>
+    <h3>Спрос, прогноз и остаток</h3>
+    <div id="chart"></div>
+  </div>
+</aside>
+
+<script type="application/json" id="data">__DATA__</script>
+<script src="https://cdn.jsdelivr.net/npm/plotly.js-dist-min@2.35.2/plotly.min.js"></script>
+<script>
+const T0 = performance.now();  // время отрисовки — в window.renderMs
+const D = JSON.parse(document.getElementById("data").textContent);
+// Статус → класс палитры и короткое название
+const ST = {
+  "ЗАКАЗАТЬ СЕЙЧАС": {c: "s-now", name: "Заказать сейчас"},
+  "РИСК ДЕФИЦИТА": {c: "s-short", name: "Риск дефицита"},
+  "ЗАПЛАНИРОВАТЬ": {c: "s-plan", name: "Запланировать"},
+  "ИЗБЫТОК": {c: "s-excess", name: "Избыток"},
+  "ЗАПАС В НОРМЕ": {c: "s-ok", name: "Запас в норме"},
+  "НИЗКАЯ НАЦЕНКА": {c: "s-low", name: "Низкая наценка"},
+  "НЕТ НАЦЕНКИ": {c: "s-low", name: "Нет наценки"},
+  "МЁРТВЫЙ": {c: "s-dead", name: "Мёртвый"},
+};
+const ACTION = ["ЗАКАЗАТЬ СЕЙЧАС", "РИСК ДЕФИЦИТА", "ЗАПЛАНИРОВАТЬ"];
+const NO_BUY = ["НИЗКАЯ НАЦЕНКА", "НЕТ НАЦЕНКИ", "МЁРТВЫЙ"];
+const MONTHS = ["янв", "фев", "мар", "апр", "май", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
+const MONTHS_FULL = ["январь", "февраль", "март", "апрель", "май", "июнь", "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь"];
+const LIMIT = 10;  // строк в компактных таблицах до «показать все»
+
+const $ = (id) => document.getElementById(id);
+function el(tag, props, text) {
+  const e = document.createElement(tag);
+  if (props) Object.assign(e, props);
+  if (text !== undefined && text !== null) e.textContent = text;
+  return e;
+}
+function fmtN(v, d) {
+  if (v === null || v === undefined || Number.isNaN(v)) return "—";
+  return Number(v).toLocaleString("ru-RU", {minimumFractionDigits: d || 0, maximumFractionDigits: d || 0});
+}
+function fmtDate(s) {
+  if (!s) return "—";
+  const p = s.slice(0, 10).split("-");
+  return p[2] + "." + p[1] + "." + p[0];
+}
+function fmtMonth(ym) {
+  const p = ym.split("-");
+  return MONTHS[Number(p[1]) - 1] + " " + p[0];
+}
+function plural(n, one, few, many) {
+  const a = Math.abs(n) % 100, b = a % 10;
+  if (a > 10 && a < 20) return many;
+  if (b === 1) return one;
+  return b >= 2 && b <= 4 ? few : many;
+}
+function catName(c) { return (D.categories && D.categories[c]) || c || "—"; }
+function shortText(s) {
+  // Первое предложение пояснения; остальное — в карточке SKU
+  if (!s) return "";
+  // Конец предложения — точка перед заглавной буквой, а не сокращение «шт.»
+  const m = /[.!?]\s+(?=[А-ЯЁA-Z])/.exec(s);
+  return m ? s.slice(0, m.index + 1) + " …" : s;
+}
+function statusTag(s) {
+  const m = ST[s] || {c: "", name: s};
+  return el("span", {className: "badge " + m.c, title: s}, m.name);
+}
+function barCell(td, v, max, cls, d, fmt) {
+  // Число с полоской: длина — доля от максимума в колонке
+  const wrap = el("span", {className: "bar " + (cls || "")});
+  wrap.appendChild(el("span", {className: "tnum"}, fmt ? fmt(v) : fmtN(v, d)));
+  const track = el("span", {className: "track"});
+  const fill = el("i");
+  fill.style.width = (max > 0 ? Math.max(2, Math.min(100, (v / max) * 100)) : 0) + "%";
+  track.appendChild(fill);
+  wrap.appendChild(track);
+  td.appendChild(wrap);
+}
+
+// Ячейка таблицы: col = {h, k|f, n (число), d (знаков), t ("date"|"status"|"month"|"cat"|"sku"|"bar"), max, cls}
+function fillCell(td, col, row) {
+  const v = col.f ? col.f(row) : row[col.k];
+  if (col.f) td.textContent = v === null || v === undefined || v === "" ? "—" : v;  // готовый текст
+  else if (col.t === "status") td.appendChild(statusTag(v));
+  else if (col.t === "date") td.textContent = fmtDate(v);
+  else if (col.t === "month") td.textContent = v ? fmtMonth(v) : "—";
+  else if (col.t === "cat") td.textContent = catName(v);
+  else if (col.t === "bar") barCell(td, v, col.max, col.cls, col.d, col.fmt);
+  else if (col.n) td.textContent = fmtN(v, col.d);
+  else td.textContent = v === null || v === undefined || v === "" ? "—" : v;
+  td.className = (col.n ? "num" : "") + (col.t === "sku" ? " mono" : "") + (col.cls && col.t !== "bar" ? " " + col.cls : "");
+}
+// Компактная таблица: первые LIMIT строк, остальные — по кнопке «Показать все»
+function buildTable(box, cols, rows, empty, onRow) {
+  box.textContent = "";
+  if (!rows.length) { box.appendChild(el("div", {className: "empty"}, empty || "Нет данных")); return; }
+  const wrap = el("div", {className: "scroll mid"});
+  const table = el("table", {className: "mini"});
+  const tr = el("tr");
+  cols.forEach((c) => tr.appendChild(el("th", {className: c.n ? "num" : ""}, c.h)));
+  table.appendChild(el("thead")).appendChild(tr);
+  const body = el("tbody");
+  rows.forEach((r, i) => {
+    const row = el("tr", {className: (i >= LIMIT ? "extra" : "") + (onRow ? " click" : "")});
+    cols.forEach((c) => { const td = el("td"); fillCell(td, c, r); row.appendChild(td); });
+    if (onRow) row.onclick = () => onRow(r);
+    body.appendChild(row);
+  });
+  table.appendChild(body);
+  wrap.appendChild(table);
+  box.appendChild(wrap);
+  if (rows.length > LIMIT) {
+    const foot = el("div", {className: "box-foot"});
+    const b = el("button", {className: "link-btn", type: "button"}, "Показать все (" + fmtN(rows.length) + ")");
+    b.onclick = () => {
+      const all = table.classList.toggle("all");
+      b.textContent = all ? "Свернуть" : "Показать все (" + fmtN(rows.length) + ")";
+    };
+    foot.appendChild(b);
+    box.appendChild(foot);
+  }
+}
+
+// Шапка
+const BY_SKU = Object.fromEntries(D.plan.map((r) => [r.sku_id, r]));
+const openSku = (r) => { const p = BY_SKU[r.sku_id]; if (p) openCard(p); };
+const cnt = (s) => D.counts[s] || 0;
+const qty = (s) => (D.qty_by_status && D.qty_by_status[s]) || 0;
+$("asof").textContent = "Данные на " + fmtDate(D.asof) + " · " + fmtN(D.total_sku) + " SKU";
+if (D.generated_at) { const g = document.createElement("span"); g.className = "gen-at"; g.textContent = " · пересчитано " + D.generated_at; $("asof").after(g); }
+$("summary").textContent = D.summary;
+// Числа первого экрана набегают один раз; без анимации — при reduced-motion и печати
+const MOTION = !(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+function countUp(node, to) {
+  node.textContent = fmtN(to);
+  if (!MOTION || !(to > 0)) return;
+  const t0 = performance.now();
+  const step = (t) => {
+    const k = Math.min(1, (t - t0) / 700);
+    node.textContent = fmtN(to * (1 - Math.pow(1 - k, 3)));
+    if (k < 1) requestAnimationFrame(step);
+  };
+  node.textContent = "0";
+  requestAnimationFrame(step);
+}
+function numSpan(v) { const s = el("span", {className: "num"}); countUp(s, v); return s; }
+const MONTHS_IN = ["январе", "феврале", "марте", "апреле", "мае", "июне", "июле", "августе", "сентябре", "октябре", "ноябре", "декабре"];
+const SCALE_MONTHS = 8;  // мини-шкала прихода: сегодня → 8 мес.
+function dayMon(s) { const p = s.split("-"); return Number(p[2]) + " " + MONTHS[Number(p[1]) - 1]; }
+(function hero() {
+  const t = D.today, s = D.soon, now = D.orders.now, h = $("hero-title");
+  const sups = now.filter((g) => g.supplier_id).length, orphan = now.find((g) => !g.supplier_id);
+  if (t.n > 0) {
+    h.append(numSpan(t.n), el("span", {className: "u"}, " поз. · "), numSpan(t.qty), el("span", {className: "u"}, " шт. у "),
+      numSpan(sups), el("span", {className: "u"}, " " + plural(sups, "поставщика", "поставщиков", "поставщиков")));
+    if (orphan) h.append(el("span", {className: "u orphan"}, " и " + fmtN(orphan.n) + " поз. без поставщика"));
+  } else {
+    h.textContent = "Сегодня срочных заказов нет";
+  }
+  const parts = [];
+  // Медиана прихода по штукам каждой позиции: по поставщику всё его количество попало бы на самую раннюю дату
+  const arr = now.flatMap((g) => g.arrivals || []).sort((a, b) => a[0].localeCompare(b[0]));
+  const half = arr.reduce((a, x) => a + x[1], 0) / 2;
+  let acc = 0, med = null;
+  for (const [a, q] of arr) { acc += q; if (acc >= half) { med = a; break; } }
+  if (med) {
+    const p = med.split("-");
+    parts.push("Основная часть придёт в " + MONTHS_IN[Number(p[1]) - 1] + " " + p[0] + ".");
+  }
+  // Ближайший срок, а не последний: по последнему первая позиция группы опоздала бы.
+  if (s.n > 0) parts.push("Ещё " + fmtN(s.n) + " поз. на " + fmtN(s.qty) + " шт. — " + (s.first === s.last ? "срок " + fmtDate(s.first)
+    : "ближайший срок " + fmtDate(s.first)) + ", все сроки — в таблице.");
+  $("hero-sub").textContent = parts.join(" ");
+  // Сценарий сезонного потолка страхового — только показ, план не меняется
+  if (t.n > 0 && t.alt_qty < t.qty) {
+    $("hero-alt").textContent = "При сезонном потолке страхового запаса — " + fmtN(t.alt_qty) + " шт. (" + fmtN(t.alt_n)
+      + " поз.), позиции с меткой — согласовать вручную.";
+    $("hero-alt").hidden = false;
+  }
+  $("hero-go").onclick = () => setFilter(t.n > 0 ? "__asap" : "__action", true);
+})();
+(function heroDiff() {
+  const box = $("hero-diff"), d = D.diff || {};
+  box.appendChild(el("b", null, "С прошлого запуска:"));
+  const len = (k) => (d[k] || []).length;
+  if (d.first_run || !d.new_orders) {
+    box.appendChild(el("span", null, "первый запуск — со следующего здесь будут новые к заказу, изменения количеств, отмены, сдвиги дат, вход и выход из риска дефицита."));
+  } else {
+    const items = [["новые к заказу", len("new_orders")], ["изменились количества", len("qty_changes")], ["отменены", len("cancelled")],
+      ["сдвиг дат", len("date_shifts")], ["новый риск", len("new_risk")], ["вышли из риска", len("left_risk")]];
+    if (items.every((x) => !x[1]) && !len("gone")) box.appendChild(el("span", null, "изменений нет — план тот же."));
+    else items.forEach(([name, n], i) => {
+      if (i) box.appendChild(el("span", {className: "sep"}, "·"));
+      const sp = el("span", null, name + " ");
+      sp.appendChild(el("b", {className: "num"}, fmtN(n)));
+      box.appendChild(sp);
+    });
+  }
+  box.appendChild(el("span", {className: "go"}, "подробнее →"));
+})();
+(function kpis() {
+  const box = $("kpis");
+  const zero = D.plan.filter((r) => r.status === "РИСК ДЕФИЦИТА" && r.stock_now === 0).length;
+  const deadStock = D.plan.filter((r) => r.status === "МЁРТВЫЙ" && r.stock_now > 0).length;
+  $("dead-note").textContent = "Без наценки в выгрузке " + fmtN(cnt("МЁРТВЫЙ") + cnt("НЕТ НАЦЕНКИ")) + " SKU: " + fmtN(cnt("МЁРТВЫЙ")) + " мёртвых — здесь, " + fmtN(cnt("НЕТ НАЦЕНКИ")) + " продаются, но нет себестоимости — в «На пересмотр цены».";
+  const late = D.risks.overdue, lateN = new Set(late.map((r) => r.po_id)).size;
+  const cards = [
+    {v: "__asap", c: "t-acc", lbl: "К заказу сейчас", val: D.today.n, sub: fmtN(D.today.qty) + " шт."},
+    {v: "РИСК ДЕФИЦИТА", c: "s-now hot", lbl: "Дефицит неизбежен", val: cnt("РИСК ДЕФИЦИТА"), sub: fmtN(zero) + " уже на нуле"},
+    {go: "sec-risks", c: "s-short", lbl: "Просроченные заказы", val: lateN,
+      sub: lateN ? fmtN(late.length) + " " + plural(late.length, "строка", "строки", "строк") + " в заказах" : "просрочек нет"},
+    {v: "ИЗБЫТОК", c: "s-excess", lbl: "Избыток", val: cnt("ИЗБЫТОК"), sub: "не заказывать"},
+    {v: "__price", c: "t-price", lbl: "На пересмотр цены", val: cnt("НИЗКАЯ НАЦЕНКА") + cnt("НЕТ НАЦЕНКИ"),
+      sub: fmtN(cnt("НИЗКАЯ НАЦЕНКА")) + " ниже " + fmtN(D.cfg.min_markup_pct) + "% · " + fmtN(cnt("НЕТ НАЦЕНКИ")) + " без себестоимости"},
+    {v: "МЁРТВЫЙ", c: "s-dead", lbl: "Мёртвый ассортимент", val: cnt("МЁРТВЫЙ"), sub: deadStock ? fmtN(deadStock) + " распродать" : "не закупать"},
+  ];
+  cards.forEach((k) => {
+    const b = el("button", {className: "kpi " + k.c, type: "button", title: k.go ? "Показать в рисках" : "Показать в таблице"});
+    if (k.v) b.dataset.v = k.v;
+    b.appendChild(el("span", {className: "k-lbl"}, k.lbl));
+    const v = el("span", {className: "k-val"});
+    countUp(v, k.val);
+    b.appendChild(v);
+    b.appendChild(el("span", {className: "k-sub", title: k.sub}, k.sub));
+    b.onclick = () => (k.go ? $(k.go).scrollIntoView({behavior: "smooth"}) : setFilter(k.v, true));
+    box.appendChild(b);
+  });
+})();
+(function heroAction() {
+  const sh = D.risks.short;
+  if (!sh.length) return;
+  const long = sh.filter((r) => r.gap_months >= D.cfg.long_gap_months).length;
+  const worst = sh.slice().sort((a, b) => (b.gap_months * b.qty - a.gap_months * a.qty) || a.sku_id.localeCompare(b.sku_id)).slice(0, 3);
+  $("act-title").textContent = "Обычным заказом не успеть: " + fmtN(sh.length) + " " + plural(sh.length, "позиция опустеет", "позиции опустеют", "позиций опустеют") + " до прихода"
+    + (D.lost_qty_total > 0 ? ", ожидаемые потери ≈ " + fmtN(D.lost_qty_total) + " шт." : "");
+  const p = $("act-text");
+  if (long) p.append("У " + fmtN(long) + " из них склад будет пуст " + fmtN(D.cfg.long_gap_months, D.cfg.long_gap_months % 1 ? 1 : 0)
+    + "+ мес. — для ходовых искать местного поставщика или ускоренную доставку. ");
+  p.append("Сильнее всего: ");
+  worst.forEach((r, i) => {
+    if (i) p.append(", ");
+    const b = el("button", {className: "sku-link", type: "button", title: "Открыть карточку SKU"}, r.sku_id);
+    b.onclick = () => openSku(r);
+    p.append(b, " (" + fmtN(r.gap_months, 1) + " мес., " + fmtN(r.qty) + " шт.)");
+  });
+  p.append(".");
+  $("hero-act").hidden = false;
+})();
+(function heroCalendar() {
+  const C = D.calendar;
+  if (!C.length) return;
+  const mx = Math.max(1, ...C.map((c) => c.qty || 0)), W = 520, H = 170, bw = W / C.length;
+  const peak = C.findIndex((c) => c.qty === mx);
+  const k = (v) => (v >= 1000 ? fmtN(v / 1000) + "к" : fmtN(v));
+  let s = '<svg viewBox="0 0 ' + W + " " + (H + 22) + '" role="img" aria-label="Штук к заказу по месяцам">';
+  C.forEach((c, i) => {
+    const hgt = Math.max(2, (c.qty || 0) / mx * (H - 18)), m = Number(c.month.slice(5)) - 1, cx = i * bw + bw / 2;
+    s += '<rect class="b' + (i === 0 ? " now" : "") + '" x="' + (i * bw + 5) + '" y="' + (H - hgt) + '" width="' + (bw - 10) + '" height="' + hgt + '" rx="4">'
+      + "<title>" + fmtMonth(c.month) + ": " + fmtN(c.qty) + " шт., " + fmtN(c.positions) + " поз.</title></rect>"
+      + '<text class="m" x="' + cx + '" y="' + (H + 15) + '" text-anchor="middle">' + MONTHS[m] + "</text>";
+    if (i === 0 || i === peak) s += '<text class="v" x="' + cx + '" y="' + (H - hgt - 5) + '" text-anchor="middle">' + k(c.qty) + "</text>";
+  });
+  $("hero-cal-svg").innerHTML = s + "</svg>";
+  $("hero-cal-peak").textContent = peak > 0 ? "пик — " + MONTHS[Number(C[peak].month.slice(5)) - 1] + ": " + fmtN(C[peak].qty) + " шт." : "";
+  const t = $("hero-cal-tbl");
+  const hr = el("tr");
+  [["Месяц", ""], ["Поз.", "num"], ["Штук", "num"]].forEach(([h, c]) => hr.appendChild(el("th", {className: c}, h)));
+  t.appendChild(el("thead")).appendChild(hr);
+  const tb = el("tbody");
+  C.slice(0, 4).forEach((c, i) => {
+    const tr = el("tr"), td = el("td", null, fmtMonth(c.month));
+    if (i === 0) td.appendChild(el("span", {className: "tag-now"}, "текущий месяц"));
+    tr.appendChild(td);
+    tr.appendChild(el("td", {className: "num"}, fmtN(c.positions)));
+    tr.appendChild(el("td", {className: "num strong"}, fmtN(c.qty)));
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb);
+  // Итог текущего месяца больше «сегодня» на позиции со сроком позже в этом месяце
+  const c0 = C[0], nowN = c0.now_positions || 0, nowQ = c0.now_qty || 0, mi = Number(c0.month.slice(5)) - 1;
+  const restN = (c0.positions || 0) - nowN, restQ = (c0.qty || 0) - nowQ, mName = MONTHS_FULL[mi];
+  $("hero-cal-note").textContent = mName[0].toUpperCase() + mName.slice(1) + " = " + fmtN(nowN) + " поз. на " + fmtN(nowQ) + " шт. сегодня"
+    + (restN > 0 ? " + ещё " + fmtN(restN) + " поз. на " + fmtN(restQ) + " шт. позже в " + MONTHS_IN[mi] : "")
+    + ". Столбец — штуки, «Поз.» — заказы по SKU: в разные месяцы один SKU может повторяться.";
+})();
+
+// Главная таблица
+const COLS = [
+  {h: "SKU", k: "sku_id", t: "sku"}, {h: "Категория", k: "category", t: "cat"}, {h: "Поставщик", k: "supplier_id", t: "sku"},
+  {h: "Статус", k: "status"}, {h: "ABC", k: "abc"}, {h: "Сколько, шт.", k: "order_qty", n: 1, cls: "strong"},
+  {h: "Заказать до", k: "order_date"}, {h: "Покрытие, мес.", k: "cover_months", n: 1, d: 1},
+  {h: "В пути, шт.", k: "on_order", n: 1}, {h: "Ожидается, шт.", k: "on_order_expected", n: 1},
+  {h: "Плечо, дн.", k: "lead_days", n: 1}, {h: "Пояснение", k: "explanation"},
+];
+const FILTERS = [
+  {v: "__action", name: "Нужно действие", n: ACTION.reduce((a, s) => a + cnt(s), 0)},
+  {v: "__asap", name: "Разместить сегодня", n: D.today.n, c: "s-now"},
+].concat(D.statuses.slice().sort((a, b) => Object.keys(ST).indexOf(a) - Object.keys(ST).indexOf(b))
+  .map((s) => ({v: s, name: (ST[s] || {name: s}).name, n: cnt(s), c: (ST[s] || {}).c})))
+  .concat([{v: "", name: "Все", n: D.plan.length}, {v: "__price", name: "На пересмотр цены", n: cnt("НИЗКАЯ НАЦЕНКА") + cnt("НЕТ НАЦЕНКИ"), hide: 1}]);
+const RANK = Object.fromEntries(Object.keys(ST).map((s, i) => [s, i]));
+let sortKey = null, sortDir = 1, visible = [];
+function urgency(a, b) {
+  // По умолчанию: «сразу» сверху, затем по статусу, дате заказа и количеству
+  return (b.order_asap - a.order_asap) || ((RANK[a.status] || 0) - (RANK[b.status] || 0))
+    || String(a.order_date || "9").localeCompare(String(b.order_date || "9")) || (b.order_qty - a.order_qty)
+    || a.sku_id.localeCompare(b.sku_id);
+}
+function setFilter(v, scroll) {
+  $("f-status").value = v;
+  renderTable();
+  if (scroll) $("sec-orders").scrollIntoView({behavior: "smooth"});
+}
+(function initFilters() {
+  const st = $("f-status"), chips = $("chips");
+  FILTERS.forEach((f) => {
+    st.appendChild(el("option", {value: f.v}, f.name));
+    if (f.hide) return;
+    const b = el("button", {className: "chip " + (f.c || ""), type: "button"});
+    b.dataset.v = f.v;
+    if (f.c) b.appendChild(el("span", {className: "dot"}));
+    b.append(f.name);
+    b.appendChild(el("span", {className: "n"}, fmtN(f.n)));
+    b.onclick = () => setFilter(f.v);
+    chips.appendChild(b);
+  });
+  const cat = $("f-cat");
+  cat.appendChild(el("option", {value: ""}, "Все категории"));
+  [...new Set(D.plan.map((r) => r.category))].sort((a, b) => catName(a).localeCompare(catName(b), "ru"))
+    .forEach((c) => cat.appendChild(el("option", {value: c}, catName(c))));
+  st.onchange = renderTable;
+  cat.onchange = renderTable;
+  $("f-search").oninput = renderTable;
+  const tr = el("tr");
+  COLS.forEach((c) => {
+    const th = el("th", {className: "sortable" + (c.n ? " num" : ""), title: "Сортировать"});
+    th.dataset.k = c.k;
+    th.append(c.h);
+    th.appendChild(el("span", {className: "arr"}));
+    th.onclick = () => { sortDir = sortKey === c.k ? -sortDir : (c.n ? -1 : 1); sortKey = c.k; renderTable(); };
+    tr.appendChild(th);
+  });
+  $("tbl").tHead.appendChild(tr);
+})();
+function mainCell(td, c, r) {
+  if (c.k === "status") {
+    td.appendChild(statusTag(r.status));
+  } else if (c.k === "order_date") {
+    if (r.order_asap) td.appendChild(el("span", {className: "asap", title: "Срок заказа " + fmtDate(r.order_date) + " — сегодня или уже прошёл"}, "сразу"));
+    else if (r.status === "ИЗБЫТОК" && r.need_qty > 0 && r.order_date) td.appendChild(el("span", {className: "muted", title: "Сейчас избыток; следующая закупка " + fmtN(r.need_qty) + " шт."}, "след. " + fmtDate(r.order_date)));
+    else if (NO_BUY.includes(r.status)) td.appendChild(el("span", {className: "muted"}, "не закупаем"));
+    else td.textContent = fmtDate(r.order_date);
+    td.className = "tnum";
+  } else if (c.k === "explanation") {
+    td.className = "ex";
+    td.title = r.explanation || "";
+    td.appendChild(el("span", {className: "clamp"}, shortText(r.explanation)));
+    td.appendChild(el("span", {className: "ex-full"}, r.explanation || ""));
+  } else {
+    fillCell(td, c, r);
+    if (c.k === "category") td.className = "cat";
+    if (c.k === "order_qty" && !r.order_qty) td.className = "num muted";
+    if (c.k === "order_qty" && r.alt_qty !== undefined && r.order_qty > 0) td.appendChild(altMark(r));
+  }
+}
+const ALT_NOTE = () => "страховой > спроса " + fmtN(D.cfg.safety_alt_days) + " дн. после прихода — согласовать вручную";
+function altMark(r) {
+  return el("span", {className: "alt-mark", title: ALT_NOTE() + ": по плану " + fmtN(r.order_qty) + " шт., при сезонном потолке "
+    + fmtN(r.alt_qty) + " шт."}, "на согласование");
+}
+function renderTable() {
+  const st = $("f-status").value, cat = $("f-cat").value, q = $("f-search").value.trim().toLowerCase();
+  visible = D.plan.filter((r) =>
+    (st === "__action" ? ACTION.includes(r.status) : st === "__asap" ? r.order_asap && r.order_qty > 0
+      : st === "__price" ? r.status === "НИЗКАЯ НАЦЕНКА" || r.status === "НЕТ НАЦЕНКИ" : !st || r.status === st) &&
+    (!cat || r.category === cat) && (!q || r.sku_id.toLowerCase().includes(q)));
+  if (sortKey) {
+    visible = visible.slice().sort((a, b) => {
+      let x = a[sortKey], y = b[sortKey];
+      if (sortKey === "category") { x = catName(x); y = catName(y); }
+      if (sortKey === "status") { x = RANK[x]; y = RANK[y]; }
+      if (x === y) return urgency(a, b);
+      if (x === null || x === undefined) return 1;
+      if (y === null || y === undefined) return -1;
+      return (x < y ? -1 : 1) * sortDir;
+    });
+  } else visible = visible.slice().sort(urgency);
+  const body = $("tbl").tBodies[0];
+  body.textContent = "";
+  const frag = document.createDocumentFragment();
+  visible.forEach((r) => {
+    const tr = el("tr", {className: "click"});
+    COLS.forEach((c) => { const td = el("td"); mainCell(td, c, r); tr.appendChild(td); });
+    tr.onclick = () => openCard(r);
+    frag.appendChild(tr);
+  });
+  body.appendChild(frag);
+  if (!visible.length) {
+    const tr = el("tr"), td = el("td", {className: "empty", colSpan: COLS.length}, "Ничего не найдено — измените фильтр или поиск");
+    tr.appendChild(td); body.appendChild(tr);
+  }
+  const sum = visible.reduce((a, r) => a + (r.order_qty || 0), 0);
+  $("f-count").textContent = fmtN(visible.length) + " из " + fmtN(D.plan.length) + " SKU · " + fmtN(sum) + " шт.";
+  document.querySelectorAll("#chips .chip, #kpis .kpi").forEach((b) => b.classList.toggle("on", b.dataset.v === st));
+  document.querySelectorAll("#tbl th").forEach((th) => {
+    th.lastChild.textContent = th.dataset.k === sortKey ? (sortDir > 0 ? "↑" : "↓") : "";
+  });
+}
+$("btn-csv").onclick = () => {
+  const q = (v) => '"' + String(v === null || v === undefined ? "" : v).replace(/"/g, '""') + '"';
+  const head = ["SKU", "Код категории", "Категория", "Поставщик", "Статус", "Флаги", "ABC", "Сколько, шт.", "Заказать до",
+    "Покрытие, мес.", "В пути, шт.", "Ожидается, шт.", "Плечо, дн.", "Пояснение"];
+  const lines = [head.map(q).join(";")];
+  const n = (v) => (v === null || v === undefined ? "" : v);
+  visible.forEach((r) => lines.push([r.sku_id, r.category, catName(r.category), r.supplier_id, r.status, r.flags, r.abc,
+    n(r.order_qty), r.order_asap ? "сразу" : fmtDate(r.order_date), n(r.cover_months), n(r.on_order),
+    n(r.on_order_expected), n(r.lead_days), r.explanation].map(q).join(";")));
+  const blob = new Blob(["﻿" + lines.join("\r\n")], {type: "text/csv;charset=utf-8"});
+  const a = el("a", {href: URL.createObjectURL(blob), download: "plan-" + D.asof + ".csv"});
+  document.body.appendChild(a); a.click(); a.remove();
+};
+setFilter("__action");
+
+// Заказы поставщикам
+const CHEV = '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+const DL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>';
+function addDays(iso, n) {
+  const t = new Date(Date.parse(iso) + n * DAY);
+  return t.toISOString().slice(0, 10);
+}
+function lotOf(sid) { const s = D.steps[sid]; return s && s.lot > 1 ? s.lot : null; }
+function placeBy(r) { return r.order_asap ? "сразу" : fmtDate(r.order_date); }
+function supplierCsv(g) {
+  // Файл заказа поставщику: BOM и «;» — открывается в Excel без настройки
+  // Числа без кавычек — Excel сразу видит их числами
+  const q = (v) => (typeof v === "number" ? String(v) : '"' + String(v === null || v === undefined ? "" : v).replace(/"/g, '""') + '"');
+  const lines = [["SKU", "Категория", "Штук", "Кратность партии", "Вес, кг", "Разместить до"].map(q).join(";")];
+  g.skus.forEach((sid) => {
+    const r = BY_SKU[sid];
+    // Вес строки — штуки × вес единицы; не заведён — пусто
+    const kg = r.weight_kg ? Math.round(r.order_qty * r.weight_kg * 100) / 100 : "";
+    lines.push([sid, catName(r.category), r.order_qty, lotOf(sid) || "", kg, placeBy(r)].map(q).join(";"));
+  });
+  const blob = new Blob(["﻿" + lines.join("\r\n")], {type: "text/csv;charset=utf-8"});
+  const a = el("a", {href: URL.createObjectURL(blob), download: "zakaz-" + (g.supplier_id || "bez-postavshchika") + "-" + D.asof + ".csv"});
+  document.body.appendChild(a); a.click(); a.remove();
+}
+// Вес — только известная часть: не «вес всего заказа», если заведён не у всех позиций
+function weightText(g) {
+  if (g.weight_kg === null || g.weight_kg === undefined) return "вес не заведён";
+  const kg = fmtN(g.weight_kg, g.weight_kg % 1 ? 1 : 0);
+  return "Вес: " + kg + " кг по " + fmtN(g.weight_n) + " поз. из " + fmtN(g.n) + (g.weight_n < g.n ? ", у остальных вес не заведён" : "");
+}
+function cell(cls, lbl, val, title) {
+  const d = el("div", {className: cls});
+  if (lbl) d.appendChild(el("span", {className: "lbl"}, lbl));
+  const v = el("span", null, val);
+  if (title) v.title = title;
+  d.appendChild(v);
+  return d;
+}
+function poItem(g, later) {
+  const item = el("div", {className: "po-item"});
+  const row = el("div", {className: "po-row po-grid", tabIndex: 0, role: "button"});
+  row.setAttribute("aria-expanded", "false");
+  const chev = el("div", {className: "c-chev"}); chev.innerHTML = CHEV; row.appendChild(chev);
+  const sup = cell("c-sup mono sup", null, g.supplier_id || "Поставщик не указан"); row.appendChild(sup);
+  sup.appendChild(el("small", {className: "wt"}, weightText(g)));
+  row.appendChild(cell("num", "Позиций", fmtN(g.n)));
+  row.appendChild(cell("num strong", "Штук", fmtN(g.qty)));
+  const by = later ? fmtDate(g.place_by) : g.asap ? "сразу" : fmtDate(g.place_by);
+  const byCell = cell("", "Разместить до", by);
+  if (!later && g.asap) { byCell.lastChild.className = "asap"; byCell.lastChild.title = "Срок самой ранней позиции — " + fmtDate(g.place_by) + ", сегодня или уже прошёл"; }
+  row.appendChild(byCell);
+  row.appendChild(cell("tnum c-arr", "Ожидаемый приход", g.arrive_from === g.arrive_to ? fmtDate(g.arrive_from) : fmtDate(g.arrive_from) + " – " + fmtDate(g.arrive_to),
+    later ? "дата заказа + плечо" : "если разместить сегодня: " + fmtDate(D.asof) + " + плечо"));
+  const sh = cell("num", "Риск дефицита", g.short_n ? fmtN(g.short_n) : "—");
+  if (g.short_n) sh.lastChild.className = "warn";
+  row.appendChild(sh);
+  row.appendChild(cell("num c-rel", "Надёжность", g.reliability === null ? "—" : fmtN(g.reliability * 100) + "%"));
+  const csv = el("div", {className: "c-csv"});
+  const b = el("button", {className: "btn", type: "button", title: "Файл заказа для " + (g.supplier_id || "позиций без поставщика")});
+  b.innerHTML = DL; b.append("CSV для поставщика");
+  b.onclick = (e) => { e.stopPropagation(); supplierCsv(g); };
+  csv.appendChild(b); row.appendChild(csv);
+  item.appendChild(row);
+  const list = el("div", {className: "po-list"});
+  let built = false;
+  const toggle = () => {
+    if (!built) {
+      const rows = g.skus.map((sid) => BY_SKU[sid]);
+      buildTable(list, [
+        {h: "SKU", k: "sku_id", t: "sku"}, {h: "Категория", k: "category", t: "cat"}, {h: "Статус", k: "status", t: "status"},
+        {h: "Штук", k: "order_qty", n: 1, cls: "strong"}, {h: "Кратность", f: (r) => (lotOf(r.sku_id) ? fmtN(lotOf(r.sku_id)) : "—"), n: 1},
+        {h: "Разместить до", f: placeBy}, {h: "Плечо, дн.", k: "lead_days", n: 1},
+        {h: "Приход", f: (r) => fmtDate(addDays(later ? r.order_date : D.asof, r.lead_days))},
+      ], rows, "Позиций нет", openCard);
+      list.querySelectorAll("table").forEach((t) => t.classList.add("all"));
+      list.querySelectorAll(".box-foot").forEach((f) => f.remove());
+      built = true;
+    }
+    const open = item.classList.toggle("open");
+    row.setAttribute("aria-expanded", String(open));
+  };
+  row.onclick = toggle;
+  // Клавиши вложенной кнопки CSV — её собственные: строку не сворачиваем.
+  row.onkeydown = (e) => { if (e.target !== row) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); } };
+  item.appendChild(list);
+  return item;
+}
+(function supplierOrders() {
+  const box = $("po"), now = D.orders.now, later = D.orders.later;
+  const head = el("div", {className: "po-head po-grid"});
+  ["", "Поставщик", "Позиций", "Штук", "Разместить до", "Ожидаемый приход", "С риском дефицита", "Надёжность", ""].forEach((h, i) =>
+    head.appendChild(el("div", {className: (i >= 2 && i <= 3) || i === 6 || i === 7 ? "num" + (i === 7 ? " c-rel" : "") : ""}, h)));
+  box.appendChild(head);
+  if (!now.length) box.appendChild(el("div", {className: "empty"}, "Сейчас размещать нечего."));
+  const FIRST = 8;  // остальных поставщиков — по кнопке
+  const items = now.map((g) => poItem(g, false));
+  items.forEach((it, i) => { if (i >= FIRST) it.hidden = true; box.appendChild(it); });
+  if (items.length > FIRST) {
+    const foot = el("div", {className: "box-foot"});
+    const more = el("button", {className: "link-btn", type: "button"}, "Показать всех (" + fmtN(items.length) + ")");
+    more.onclick = () => {
+      const show = items[FIRST].hidden;
+      items.slice(FIRST).forEach((it) => { it.hidden = !show; });
+      more.textContent = show ? "Свернуть" : "Показать всех (" + fmtN(items.length) + ")";
+    };
+    foot.appendChild(more);
+    box.appendChild(foot);
+  }
+  const n = now.reduce((a, g) => a + g.n, 0), q = now.reduce((a, g) => a + g.qty, 0);
+  // Группа «без поставщика» — не поставщик: считаем отдельно.
+  const sups = now.filter((g) => g.supplier_id).length, orphan = now.find((g) => !g.supplier_id);
+  $("po-sub").textContent = "Сейчас — " + fmtN(sups) + " " + plural(sups, "поставщик", "поставщика", "поставщиков")
+    + (orphan ? " и " + fmtN(orphan.n) + " " + plural(orphan.n, "позиция", "позиции", "позиций") + " без поставщика (" + fmtN(orphan.qty) + " шт.) — подобрать поставщика" : "") + "; всего " + fmtN(n) + " "
+    + plural(n, "позиция", "позиции", "позиций") + ", " + fmtN(q) + " шт. Клик по строке — список позиций, по позиции — карточка SKU.";
+  if (later.length) {
+    const det = el("details", {className: "po-later"});
+    const sm = el("summary");
+    sm.innerHTML = CHEV;
+    const ln = later.reduce((a, g) => a + g.n, 0), lq = later.reduce((a, g) => a + g.qty, 0);
+    sm.append("Запланировать позже");
+    sm.appendChild(el("span", {className: "muted"}, fmtN(later.length) + " " + plural(later.length, "поставщик", "поставщика", "поставщиков") + " · "
+      + fmtN(ln) + " поз. · " + fmtN(lq) + " шт. — срок заказа ещё не наступил"));
+    det.appendChild(sm);
+    later.forEach((g) => det.appendChild(poItem(g, true)));
+    box.appendChild(det);
+  }
+})();
+// Первый экран: кому заказать сегодня (после supplierCsv и DL)
+(function heroSuppliers() {
+  const now = D.orders.now, body = $("hero-po"), FIRST = 10;
+  const start = Date.parse(D.asof), endD = new Date(start);
+  endD.setMonth(endD.getMonth() + SCALE_MONTHS);
+  const x = (s) => Math.max(0, Math.min(100, (Date.parse(s) - start) / (endD - start) * 100));
+  if (!now.length) {
+    const tr = el("tr");
+    tr.appendChild(el("td", {className: "empty", colSpan: 7}, "Сейчас размещать нечего."));
+    body.appendChild(tr);
+  }
+  now.slice(0, FIRST).forEach((g) => {
+    const tr = el("tr");
+    const sup = el("td", {className: "sup"}, g.supplier_id || "Поставщик не указан");
+    if (g.reliability !== null && g.reliability !== undefined && g.reliability < D.cfg.unreliable_below) {
+      sup.appendChild(el("span", {className: "rel", title: "Надёжность " + fmtN(g.reliability * 100) + "% по закрытым заказам"},
+        "недовоз " + fmtN((1 - g.reliability) * 100) + "%"));
+    }
+    tr.appendChild(sup);
+    tr.appendChild(el("td", {className: "num"}, fmtN(g.n)));
+    tr.appendChild(el("td", {className: "num strong"}, fmtN(g.qty)));
+    tr.appendChild(el("td", {className: "tnum hide-m"}, g.arrive_from === g.arrive_to ? dayMon(g.arrive_from) : dayMon(g.arrive_from) + " – " + dayMon(g.arrive_to)));
+    const sc = el("td", {className: "hide-m"});
+    const bar = el("div", {className: "arr-scale", title: "Приход " + fmtDate(g.arrive_from) + " – " + fmtDate(g.arrive_to) + "; шкала: сегодня → " + SCALE_MONTHS + " мес."});
+    bar.appendChild(el("div", {className: "ax"}));
+    bar.appendChild(el("div", {className: "t"}));
+    const w = el("div", {className: "w"});
+    w.style.left = x(g.arrive_from) + "%";
+    w.style.width = Math.max(3, x(g.arrive_to) - x(g.arrive_from)) + "%";
+    bar.appendChild(w);
+    sc.appendChild(bar);
+    tr.appendChild(sc);
+    tr.appendChild(el("td", {className: "num" + (g.short_n ? " dz" : " muted")}, g.short_n ? fmtN(g.short_n) : "—"));
+    const td = el("td", {className: "num"});
+    const b = el("button", {className: "btn", type: "button", title: "Файл заказа для " + (g.supplier_id || "позиций без поставщика")});
+    b.innerHTML = DL;
+    b.appendChild(el("span", {className: "csv-l"}, "CSV"));
+    b.setAttribute("aria-label", "CSV для " + (g.supplier_id || "позиций без поставщика"));
+    b.onclick = () => supplierCsv(g);
+    td.appendChild(b);
+    tr.appendChild(td);
+    body.appendChild(tr);
+  });
+  const more = $("hero-po-more");
+  if (now.length > FIRST) {
+    const restG = now.slice(FIRST), rest = restG.filter((g) => g.supplier_id).length, orphan = restG.find((g) => !g.supplier_id);
+    const a = el("a", {className: "more-link", href: "#sec-po"}, "ещё " + fmtN(rest) + " " + plural(rest, "поставщик", "поставщика", "поставщиков")
+      + (orphan ? " и " + fmtN(orphan.n) + " поз. без поставщика" : "") + " →");
+    more.append(a, " · шкала прихода: сегодня → " + SCALE_MONTHS + " мес.");
+  } else more.textContent = "Шкала прихода: сегодня → " + SCALE_MONTHS + " мес.";
+})();
+
+// Календарь заказов
+(function calendar() {
+  const bars = $("cal-bars"), axis = $("cal-axis"), cal = D.calendar;
+  const max = Math.max(1, ...cal.map((c) => c.qty || 0));
+  cal.forEach((c, i) => {
+    const col = el("div", {className: "cal-col" + (i === 0 ? " now" : "") + (c.qty ? "" : " zero"),
+      title: fmtMonth(c.month) + ": " + fmtN(c.qty) + " шт., " + fmtN(c.positions) + " поз."});
+    col.appendChild(el("div", {className: "cal-val"}, c.qty ? fmtN(c.qty) : "—"));
+    const b = el("div", {className: "cal-bar"});
+    b.style.height = (c.qty ? Math.max(1.5, (c.qty / max) * 82) : 1.5) + "%";
+    col.appendChild(b);
+    bars.appendChild(col);
+    const a = el("div", {className: i === 0 ? "now" : ""});
+    a.appendChild(el("b", null, fmtMonth(c.month)));
+    a.appendChild(el("span", null, fmtN(c.positions) + " поз."));
+    axis.appendChild(a);
+  });
+  if (cal.length) {
+    const m = cal[0].month, name = MONTHS_FULL[Number(m.split("-")[1]) - 1];
+    const c0 = cal[0], rest = (c0.qty || 0) - (c0.now_qty || 0);
+    $("cal-now-lbl").textContent = fmtMonth(m) + " — текущий месяц";
+    const restN = (c0.positions || 0) - (c0.now_positions || 0);
+    $("cal-note").textContent = name[0].toUpperCase() + name.slice(1) + ": сразу — " + fmtN(c0.now_positions || 0) + " поз. на "
+      + fmtN(c0.now_qty || 0) + " шт. (срок сегодня или прошёл, риск дефицита)"
+      + (rest > 0 ? "; позже в этом месяце — ещё " + fmtN(restN) + " поз. на " + fmtN(rest) + " шт" : "")
+      + ". Дальше — повторные заказы на ежемесячных пересмотрах. Столбец — штуки; под месяцем — позиции, то есть заказы по SKU:"
+      + " один SKU может повторяться в разных месяцах.";
+  }
+})();
+
+// Риски и списки
+(function lists() {
+  const byGap = (a, b) => (b.gap_months - a.gap_months) || a.sku_id.localeCompare(b.sku_id);
+  const short = D.risks.short.slice().sort(byGap);
+  const excess = D.risks.excess.slice().sort((a, b) => (b.excess_months - a.excess_months) || a.sku_id.localeCompare(b.sku_id));
+  const overdue = D.risks.overdue.slice().sort((a, b) => String(a.promised_date).localeCompare(String(b.promised_date)) || a.po_id.localeCompare(b.po_id));
+  // Без наценки — после низкой: себестоимости нет, сравнивать с порогом нечего.
+  const mk = (r) => (r.avg_markup_pct_12m === null || r.avg_markup_pct_12m === undefined ? Infinity : r.avg_markup_pct_12m);
+  const low = D.plan.filter((r) => r.status === "НИЗКАЯ НАЦЕНКА" || r.status === "НЕТ НАЦЕНКИ")
+    .sort((a, b) => (mk(a) - mk(b)) || (b.need_qty - a.need_qty) || a.sku_id.localeCompare(b.sku_id));
+  const dead = D.plan.filter((r) => r.status === "МЁРТВЫЙ")
+    .sort((a, b) => (b.stock_now - a.stock_now) || a.sku_id.localeCompare(b.sku_id));
+  const maxOf = (rows, k) => Math.max(0, ...rows.map((r) => r[k] || 0));
+  const days = (s) => Math.round((Date.parse(D.asof) - Date.parse(s)) / 864e5);
+  const extra = excess.filter((r) => (BY_SKU[r.sku_id] || {}).status !== "ИЗБЫТОК").length;
+  if (extra) $("excess-note").textContent = "Запас сверх плеча и покрытия: заморожены деньги. Из них " + fmtN(extra)
+    + " SKU — с избытком как доп. флагом при другом статусе.";
+  [["n-short", short], ["n-excess", excess], ["n-low", low], ["n-dead", dead]]
+    .forEach(([id, rows]) => { $(id).textContent = fmtN(rows.length); });
+  // Просрочки — по заказам: в одном заказе бывает несколько товарных строк.
+  const lateN = new Set(overdue.map((r) => r.po_id)).size;
+  $("overdue-note").textContent = "Обещанная дата прошла: в расчёте приход через " + fmtN(D.cfg.overdue_shift_days)
+    + " дн. Просрочка больше " + fmtN(D.cfg.overdue_stale_days) + " дн. в расчёте не учтена — уточнить у поставщика.";
+  $("n-overdue").textContent = fmtN(lateN) + (lateN !== overdue.length ? " · " + fmtN(overdue.length) + " строк" : "");
+  buildTable($("r-short"), [
+    {h: "SKU", k: "sku_id", t: "sku"}, {h: "Категория", k: "category", t: "cat"},
+    {h: "«Дыра», мес.", k: "gap_months", n: 1, d: 1, t: "bar", max: maxOf(short, "gap_months"), cls: "s-short"},
+    {h: "Ожидаемые потери, шт.", k: "lost_qty", n: 1},
+    {h: "Заказать, шт.", k: "qty", n: 1, cls: "strong"},
+  ], short, "Дефицита нет", openSku);
+  buildTable($("r-overdue"), [
+    {h: "Заказ", k: "po_id", t: "sku"}, {h: "SKU", k: "sku_id", t: "sku"}, {h: "Поставщик", k: "supplier_id", t: "sku"},
+    {h: "Обещано", k: "promised_date", t: "date"},
+    {h: "Просрочка, дн.", f: (r) => (r.promised_date ? fmtN(days(r.promised_date)) : "—"), n: 1},
+    {h: "Штук", k: "qty", n: 1},
+    {h: "В расчёте", f: (r) => (r.stale ? "не учтён — уточнить у поставщика" : "приход через " + fmtN(D.cfg.overdue_shift_days) + " дн.")},
+  ], overdue, "Просроченных заказов нет", openSku);
+  buildTable($("r-excess"), [
+    {h: "SKU", k: "sku_id", t: "sku"}, {h: "Категория", k: "category", t: "cat"}, {h: "Остаток, шт.", k: "stock_now", n: 1},
+    {h: "Лишних месяцев", k: "excess_months", n: 1, d: 1, t: "bar", max: maxOf(excess, "excess_months"), cls: "s-excess"},
+  ], excess, "Избытка нет", openSku);
+  buildTable($("suppliers"), [
+    {h: "Поставщик", k: "supplier_id", t: "sku"},
+    {h: "Надёжность", k: "reliability", t: "bar", max: 1, n: 1, cls: "s-ok", fmt: (v) => fmtN(v * 100) + "%"},
+    {h: "Заказов в расчёте", k: "orders_n", n: 1}, {h: "Медиана плеча, дн.", k: "median_lead", n: 1},
+    {h: "Открытых заказов", k: "open_n", n: 1},
+  ], D.suppliers, "Нет данных");
+  buildTable($("low"), [
+    {h: "SKU", k: "sku_id", t: "sku"}, {h: "Категория", k: "category", t: "cat"},
+    {h: "Наценка, %", k: "avg_markup_pct_12m", n: 1, d: 1}, {h: "Потребность, шт.", k: "need_qty", n: 1},
+  ], low, "Таких SKU нет", openCard);
+  buildTable($("dead"), [
+    {h: "SKU", k: "sku_id", t: "sku"}, {h: "Категория", k: "category", t: "cat"}, {h: "Остаток, шт.", k: "stock_now", n: 1},
+    {h: "Действие", f: (r) => (r.stock_now > 0 ? "распродать" : "—")},
+  ], dead, "Таких SKU нет", openCard);
+})();
+
+// Сезонность
+(function season() {
+  const t = $("tbl-season");
+  const head = el("tr");
+  head.appendChild(el("th", null, "Категория"));
+  MONTHS.forEach((m) => head.appendChild(el("th", {className: "c"}, m)));
+  t.appendChild(el("thead")).appendChild(head);
+  const body = el("tbody");
+  const cats = Object.keys(D.season).sort((a, b) => catName(a).localeCompare(catName(b), "ru"));
+  const max = Math.max(0.01, ...cats.flatMap((c) => D.season[c].map((s) => s || 0)));
+  cats.forEach((c) => {
+    const tr = el("tr");
+    tr.appendChild(el("td", null, catName(c)));
+    const peak = Math.max(...D.season[c].map((s) => s || 0));
+    D.season[c].forEach((s, i) => {
+      const k = (s || 0) / max;
+      const td = el("td", {className: "h" + (s === peak ? " peak" : ""), title: catName(c) + ", " + MONTHS_FULL[i] + ": " + fmtN((s || 0) * 100, 1) + "%"},
+        fmtN((s || 0) * 100, 1));
+      td.style.background = "color-mix(in srgb, var(--heat) " + Math.round(6 + k * 84) + "%, var(--surface))";
+      if (k > 0.5) td.style.color = "#fff";
+      tr.appendChild(td);
+    });
+    body.appendChild(tr);
+  });
+  t.appendChild(body);
+})();
+
+// Что изменилось
+(function diff() {
+  const box = $("diff"), d = D.diff || {};
+  const line = (text) => {
+    const p = el("div", {className: "diff-line"});
+    p.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>';
+    p.appendChild(el("span", null, text));
+    box.appendChild(p);
+  };
+  if (d.first_run || !d.new_orders) { line("Первый запуск — сравнивать не с чем. Изменения появятся после следующего расчёта."); return; }
+  const blocks = [
+    ["Новые к заказу", d.new_orders, [{h: "SKU", k: "sku_id", t: "sku"}, {h: "Статус", k: "status", t: "status"},
+      {h: "Штук", k: "order_qty", n: 1}, {h: "Заказать до", k: "order_date", t: "date"}]],
+    ["Изменилось количество", d.qty_changes || [], [{h: "SKU", k: "sku_id", t: "sku"}, {h: "Было, шт.", k: "from", n: 1},
+      {h: "Стало, шт.", k: "to", n: 1}]],
+    ["Отменены", d.cancelled || [], [{h: "SKU", k: "sku_id", t: "sku"}, {h: "Статус", k: "status", t: "status"},
+      {h: "Было, шт.", k: "from", n: 1}]],
+    ["Пропали из выгрузки", d.gone || [], [{h: "SKU", k: "sku_id", t: "sku"}, {h: "Статус", k: "status", t: "status"},
+      {h: "Было, шт.", k: "from", n: 1}]],
+    ["Сдвинулись даты заказа", d.date_shifts || [], [{h: "SKU", k: "sku_id", t: "sku"}, {h: "Было", k: "from", t: "date"},
+      {h: "Стало", k: "to", t: "date"}, {h: "Сдвиг, дн.", k: "days", n: 1}]],
+    ["Ушли из риска дефицита", d.left_risk || [], [{h: "SKU", k: "sku_id", t: "sku"}]],
+    ["Пришли в риск дефицита", d.new_risk || [], [{h: "SKU", k: "sku_id", t: "sku"}]],
+  ];
+  if (blocks.every((b) => !b[1].length)) {
+    line("С прошлого запуска изменений нет: новых к заказу 0, количества и даты те же, отмен и пропавших нет, риск дефицита без изменений.");
+    return;
+  }
+  const stats = el("div", {className: "diff-stats"});
+  blocks.forEach(([title, rows]) => {
+    const s = el("div", {className: "diff-stat"});
+    s.appendChild(el("b", null, fmtN(rows.length)));
+    s.appendChild(el("span", null, title));
+    stats.appendChild(s);
+  });
+  box.appendChild(stats);
+  const grid = el("div", {className: "grid"});
+  grid.style.padding = "0 18px 18px";
+  blocks.filter((b) => b[1].length).forEach(([title, rows, cols]) => {
+    const c = el("div", {className: "card"});
+    const h = el("div", {className: "box-head"});
+    h.appendChild(el("h3", null, title));
+    h.appendChild(el("span", {className: "pill"}, fmtN(rows.length)));
+    c.appendChild(h);
+    const w = el("div");
+    buildTable(w, cols, rows, "Изменений нет", openSku);
+    c.appendChild(w);
+    grid.appendChild(c);
+  });
+  box.appendChild(grid);
+})();
+
+// Точность прогноза
+(function accuracy() {
+  const box = $("acc"), b = D.backtest;
+  if (!b || !b.total) {
+    box.appendChild(el("p", {className: "muted"}, "Сравнивать не с чем: нет истории до среза или проданных месяцев после него."));
+    return;
+  }
+  const pct = (v) => v === null || v === undefined ? "—" : fmtN(v * 100) + "%";
+  const sgn = (v) => v === null || v === undefined ? "—" : (v > 0 ? "+" : v < 0 ? "−" : "") + fmtN(Math.abs(v) * 100) + "%";
+  const t = b.total, hs = b.horizons || [];
+  const range = (k) => {
+    const v = hs.map((h) => Math.round(h[k] * 100));
+    return Math.min(...v) === Math.max(...v) ? v[0] + "%" : Math.min(...v) + "–" + Math.max(...v) + "%";
+  };
+  let lead = "";
+  if (hs.length) {
+    const span = "1–" + hs[0].months + (hs.length > 1 ? " … 1–" + hs[hs.length - 1].months : "") + " мес.";
+    const better = hs.every((h) => h.wape_model < h.wape_ly && h.wape_model < h.wape_m12);
+    const worse = hs.every((h) => h.wape_model >= h.wape_ly || h.wape_model >= h.wape_m12);
+    lead = "На горизонте плеча (" + span + ") модель ошибается на " + range("wape_model") +
+      (better ? " — меньше" : worse ? " — не меньше" : " — не везде меньше") +
+      ", чем «как год назад» (" + range("wape_ly") + ") и среднее за 12 мес. (" + range("wape_m12") + "). ";
+  }
+  const year = t.wape_model < t.wape_ly ? "лучше «как год назад»" : "не лучше «как год назад»";
+  lead += "За весь год ошибка " + pct(t.wape_model) + " — " + year + " (" + pct(t.wape_ly) + "); " +
+    (t.bias_model >= 0 ? "в сумме модель завышает продажи на " : "в сумме модель занижает продажи на ") +
+    fmtN(Math.abs(t.bias_model) * 100) + "%.";
+  box.appendChild(el("p", {className: "acc-lead"}, lead));
+  const best = (r, k) => Math.min(r.wape_model, r.wape_m12, r.wape_ly) === r[k] ? "best" : "";
+  const cols = (first) => [first,
+    {h: "Ошибка модели", f: (r) => pct(r.wape_model), n: 1, cls: ""},
+    {h: "Среднее за год", f: (r) => pct(r.wape_m12), n: 1},
+    {h: "Как год назад", f: (r) => pct(r.wape_ly), n: 1},
+    {h: "Смещение", f: (r) => sgn(r.bias_model), n: 1}];
+  const mark = (box2, rows) => {
+    // Лучший WAPE в строке — жирным
+    box2.querySelectorAll("tbody tr").forEach((tr, i) => {
+      ["wape_model", "wape_m12", "wape_ly"].forEach((k, j) => { if (best(rows[i], k)) tr.children[j + 1].classList.add("best"); });
+    });
+  };
+  const grid = el("div", {className: "grid acc-grid"});
+  const part = (title, sub, c, rows) => {
+    const card = el("div", {className: "card"});
+    const h = el("div", {className: "box-head"});
+    const hh = el("div");
+    hh.appendChild(el("h3", null, title));
+    hh.appendChild(el("p", null, sub));
+    h.appendChild(hh);
+    card.appendChild(h);
+    const w = el("div");
+    buildTable(w, c, rows, "Нет данных");
+    mark(w, rows);
+    card.appendChild(w);
+    grid.appendChild(card);
+  };
+  const hRows = hs.map((h) => Object.assign({label: "1–" + h.months + " мес."}, h))
+    .concat([Object.assign({label: "Весь год, 1–" + b.months + " мес."}, t)]);
+  part("По горизонтам", "Плечо импорта 4–6 мес. — главное для заказа.", cols({h: "Горизонт", k: "label"}), hRows);
+  part("По категориям", "Весь год, сортировка по проданным штукам.", cols({h: "Категория", k: "category", t: "cat", cls: "cat"}), b.categories || []);
+  box.appendChild(grid);
+  box.appendChild(el("p", {className: "note"},
+    "Ошибка (WAPE) — сумма абсолютных ошибок по месяцам к сумме продаж; «среднее за год» (M12) — среднее продаж за 12 мес. до среза; " +
+    "«как год назад» (LY) — продажи того же месяца год назад; смещение (bias) больше 0 — прогноз выше продаж. Жирным — меньшая ошибка в строке."));
+  box.appendChild(el("p", {className: "note"},
+    "Срез " + fmtDate(b.start) + ": модель видит только данные до него, факт — чистые продажи " + fmtMonth(b.first_month) + " – " +
+    fmtMonth(b.last_month) + ", только полные месяцы. Месяцы без товара на складе исключены (нет остатка на начало месяца или следующего, " +
+    "продано всё доступное) — одинаково для всех трёх прогнозов. Оценено " + fmtN(t.pairs) + " " + plural(t.pairs, "пара", "пары", "пар") +
+    " SKU × месяц, " + fmtN(t.sku) + " SKU, " + fmtN(t.fact) + " шт. продаж. Новые SKU без истории на срез не оцениваются: " + fmtN(b.new_sku) + "."));
+})();
+
+// Как считается
+(function rules() {
+  const ol = $("rules");
+  (D.rules || []).forEach((t) => ol.appendChild(el("li", null, t)));
+  $("run-note").textContent = D.run_note || "";
+})();
+
+// Карточка SKU
+let cardRow = null;
+function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+function openCard(r) {
+  cardRow = r;
+  const m = ST[r.status] || {c: ""};
+  $("m-title").textContent = r.sku_id;
+  $("m-sub").textContent = catName(r.category) + " · поставщик " + (r.supplier_id || "—");
+  const badges = $("m-badges");
+  badges.textContent = "";
+  badges.appendChild(statusTag(r.status));
+  (r.flags ? r.flags.split(";") : []).map((f) => f.trim()).filter(Boolean).forEach((f) => badges.appendChild(el("span", {className: "flag"}, f.toLowerCase())));
+  if (r.alt_qty !== undefined && r.order_qty > 0) badges.appendChild(el("span", {className: "flag alt", title: ALT_NOTE()}, "согласовать вручную"));
+  const stats = $("m-stats");
+  stats.textContent = "";
+  const add = (lbl, val, hl, tip) => {
+    const s = el("div", {className: "stat" + (hl ? " hl " + m.c : "")});
+    if (tip) s.title = tip;
+    s.appendChild(el("span", null, lbl));
+    s.appendChild(el("b", null, val));
+    stats.appendChild(s);
+  };
+  const noBuy = NO_BUY.includes(r.status);
+  const U = " " + (r.unit || "шт.");
+  add("К заказу", noBuy ? "не закупаем" : fmtN(r.order_qty) + U, !noBuy && r.order_qty > 0);
+  // Заказ 0 шт. — дата заказа не команда закупщику; следующая закупка у избытка — в «Почему столько».
+  if (!noBuy && !(r.order_qty > 0)) add("Срок заказа", "заказ не нужен");
+  else add("Заказать до", noBuy ? "—" : r.order_asap ? "сразу" : fmtDate(r.order_date), r.order_asap);
+  add("Покрытие", fmtN(r.cover_months, 1) + " мес.");
+  add("Класс ABC", r.abc || "—", false, "По продажам в штуках за 12 мес.: A — первые 80% продаж, B — до 95%, C — остальные");
+  add("Остаток сейчас", fmtN(r.stock_now) + U);
+  add("В пути / ожидается", fmtN(r.on_order) + " / " + fmtN(r.on_order_expected) + U);
+  D.risks.overdue.filter((o) => o.sku_id === r.sku_id && o.stale).forEach((o) => {
+    const late = Math.round((Date.parse(D.asof) - Date.parse(o.promised_date)) / 864e5);
+    // Коротко в плитке, полный текст — в подсказке: длинная строка не влезает в ячейку
+    add("Просрочка " + fmtN(late) + " дн., " + fmtN(o.qty) + U, "не в расчёте", true,
+      "Заказ " + o.po_id + ", " + fmtN(o.qty) + U + ": просрочка " + fmtN(late) + " дн. — уточнить у поставщика, в расчёте не учтён");
+  });
+  add("Плечо поставки", fmtN(r.lead_days) + " дн.");
+  add("Запас кончится", fmtDate(r.stockout_date));
+  add("Поставщик довозит", r.reliability === null || r.reliability === undefined ? "—" : fmtN(r.reliability * 100) + "% заказанного", false,
+    "Доля полученных штук от заказанных по закрытым заказам поставщика");
+  if (r.status === "РИСК ДЕФИЦИТА") {
+    add("«Дыра»", fmtN(r.gap_months, 1) + " мес.", true);
+    if (r.lost_qty !== undefined && r.lost_qty !== null) add("Ожидаемые потери", "≈ " + fmtN(r.lost_qty) + U, true);
+  } else add("Наценка 12 мес.", r.avg_markup_pct_12m === null || r.avg_markup_pct_12m === undefined ? "—" : fmtN(r.avg_markup_pct_12m, 1) + "%");
+  const ex = $("m-explain");
+  ex.className = "explain " + m.c;
+  ex.textContent = r.explanation || "Пояснения нет.";
+  renderWhy(r, m.c);
+  $("scrim").className = "open";
+  $("drawer").className = "open";
+  $("drawer").setAttribute("aria-hidden", "false");
+  $("m-body").scrollTop = 0;
+  drawChart();
+  $("m-close").focus({preventScroll: true});
+}
+// Почему столько: шаги той же формулы, что в расчёте, с числами SKU
+const DAY = 864e5;
+const daysBetween = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / DAY);
+function whyReason(r, s) {
+  const cfg = D.cfg || {};
+  if (r.status === "МЁРТВЫЙ") {
+    return "Продаж за последние 12 месяцев нет — не закупаем." + (r.stock_now > 0 ? " Остаток " + fmtN(r.stock_now) + " шт. — распродать." : "");
+  }
+  if (r.status === "НЕТ НАЦЕНКИ") {
+    return "Продажи есть, но наценка не посчитана — в ERP нет себестоимости: в автозаказ не идёт, проверить цену."
+      + (r.need_qty > 0 ? " Потребность для справки — " + fmtN(r.need_qty) + " шт." : "");
+  }
+  if (r.status === "НИЗКАЯ НАЦЕНКА") {
+    return "Наценка за 12 мес. " + fmtN(r.avg_markup_pct_12m, 1) + "% — ниже порога " + fmtN(cfg.min_markup_pct) + "%: в автозаказ не идёт, решение за закупщиком."
+      + (r.need_qty > 0 ? " Потребность для справки — " + fmtN(r.need_qty) + " шт." : "");
+  }
+  if (r.status === "ИЗБЫТОК") {
+    const next = r.need_qty > 0 && r.order_date ? " Следующая закупка — " + fmtN(r.need_qty) + " шт. до " + fmtDate(r.order_date) + "." : "";
+    return "Склад " + fmtN(r.stock_now) + " шт., в пути ожидается " + fmtN(r.on_order_expected) + " шт.: вместе их хватит дольше, чем на плечо "
+      + fmtN(r.lead_days) + " дн. + покрытие + " + fmtN(cfg.excess_extra_months) + " мес. Сейчас заказывать не нужно, деньги уже заморожены в запасе." + next;
+  }
+  if (s && s.raw <= 0) {
+    return "Остатка и ожидаемого из заказов в пути хватает на плечо и покрытие: потребность " + fmtN(s.raw, 1) + " шт. — заказ не нужен.";
+  }
+  return "Склад не опустеет в ближайшие " + fmtN(cfg.horizon_months) + " мес. (покрытие " + fmtN(r.cover_months, 1) + " мес.) — заказ не нужен.";
+}
+function renderWhy(r, cls) {
+  const box = $("m-why"), s = D.steps[r.sku_id];
+  box.textContent = "";
+  box.className = "why " + cls;
+  const row = (op, title, hint, val, kind) => {
+    const d = el("div", {className: "why-row" + (kind ? " " + kind : "")});
+    d.appendChild(el("span", {className: "op"}, op));
+    const t = el("span", {className: "t"}, title);
+    if (hint) t.appendChild(el("small", null, hint));
+    d.appendChild(t);
+    d.appendChild(el("span", {className: "v"}, val));
+    box.appendChild(d);
+  };
+  if (!(r.order_qty > 0) || !s) {
+    const p = el("div", {className: "why-note"});
+    p.appendChild(el("b", null, "Заказ 0 шт. "));
+    p.append(whyReason(r, s));
+    box.appendChild(p);
+    return;
+  }
+  const f1 = (v) => fmtN(v, 1);
+  const cover = daysBetween(s.arrival, s.end);
+  const now = s.at <= D.asof;
+  const when = now ? "сегодня, " + fmtDate(D.asof) : "дату заказа " + fmtDate(s.at);
+  row("", "Прогноз спроса на " + fmtN(cover) + " дн. после прихода", "заказ от " + fmtDate(s.at) + " придёт через плечо " + fmtN(r.lead_days)
+    + " дн. — " + fmtDate(s.arrival) + "; покрытие до " + fmtDate(s.end) + " (до следующего пересмотра); уровень × сезон × тренд", f1(s.forecast));
+  let sh = fmtN(D.cfg.z, 2) + " × σ " + f1(s.sigma) + " × √(" + fmtN(r.lead_days) + " / " + fmtN(D.cfg.days_per_month, 1) + ") = " + f1(s.safety_raw);
+  if (s.safety_cap !== null && s.safety_raw > s.safety_cap + 1e-6) sh += "; ограничен потолком " + fmtN(D.cfg.safety_cap_months) + " мес. спроса = " + f1(s.safety_cap);
+  row("+", "Страховой запас", sh, f1(s.safety));
+  const stHint = "сегодня " + fmtN(r.stock_now) + " шт. − продажи до прихода + приходы в пути до него; не меньше 0 — продажи, на которые не хватит товара, потеряны и не дозаказываются";
+  row("−", "Остаток к приходу " + fmtDate(s.arrival), stHint, f1(s.stock));
+  const rate = s.pending > 0 ? s.transit / s.pending : null;
+  row("−", "Придёт из заказов в пути за покрытие", s.pending > 0
+    ? "с " + fmtDate(s.arrival) + " по " + fmtDate(s.end) + ": " + fmtN(s.pending) + " шт. × надёжность поставщика " + fmtN(rate * 100) + "%"
+    : "заказов в пути с приходом с " + fmtDate(s.arrival) + " по " + fmtDate(s.end) + " нет", f1(s.transit));
+  if (s.bridge > 0) row("!", "Не хватит до прихода заказа в пути", "склад опустеет раньше, чем придёт уже заказанное:"
+    + " заказ закрывает самую большую нехватку внутри покрытия; это больше, чем сумма строк выше", f1(s.bridge));
+  row("=", "Потребность", "на " + when, f1(s.raw), "sum");
+  const lotHint = s.lot > 1 ? "вверх до целого: " + fmtN(s.ceil) + "; до кратности партии " + fmtN(s.lot) + " шт. (по прошлым приходам)"
+    : s.lot_full > 1 ? "вверх до целого; до партии " + fmtN(s.lot_full) + " шт. не округляем — это добавило бы больше " + fmtN(D.cfg.lot_max_overage_months) + " мес. спроса"
+    : "вверх до целого; кратности партии нет";
+  row("≈", "Округление", lotHint, fmtN(r.order_qty));
+  row("=", "К заказу", null, fmtN(r.order_qty) + " шт.", "total");
+  if (r.alt_qty !== undefined) {
+    const p = el("div", {className: "why-note"});
+    p.appendChild(el("b", null, "Страховой > спроса " + fmtN(D.cfg.safety_alt_days) + " дн. после прихода — согласовать вручную. "));
+    p.append("По плану " + fmtN(r.order_qty) + " шт., при сезонном потолке " + fmtN(r.alt_qty) + " шт.: страховой "
+      + f1(s.safety) + " → " + f1(r.alt_safety) + " (прогноз спроса за " + fmtN(D.cfg.safety_alt_days) + " дн. после прихода "
+      + fmtDate(s.arrival) + "). План сценарий не применяет — политика на истории не проверена.");
+    box.appendChild(p);
+  }
+}
+function drawChart() {
+  const box = $("chart"), r = cardRow;
+  if (!r) return;
+  if (typeof Plotly === "undefined") {
+    box.textContent = "";
+    box.appendChild(el("div", {className: "chart-off"}, "График не показан: библиотека Plotly не загрузилась (нужен интернет). Цифры выше — полные."));
+    return;
+  }
+  const c = D.charts[r.sku_id];
+  if (!c) { box.textContent = ""; box.appendChild(el("div", {className: "chart-off"}, "По этому SKU нет данных для графика.")); return; }
+  const wide = box.clientWidth > 480;
+  const ink = cssVar("--ink-2"), muted = cssVar("--muted"), line = cssVar("--line"), lost = c.h.filter((p) => p[2]);
+  const traces = [
+    {x: c.h.map((p) => p[0]), y: c.h.map((p) => p[1]), type: "bar", name: "Спрос (факт)", marker: {color: cssVar("--chart-hist")}},
+    {x: lost.map((p) => p[0]), y: lost.map(() => 0), type: "scatter", mode: "markers", name: "Упущенный спрос (не было остатка)",
+      marker: {color: cssVar("--st-now"), symbol: "x", size: 9}},
+    {x: c.f.map((p) => p[0]), y: c.f.map((p) => p[1]), type: "scatter", mode: "lines+markers", name: "Прогноз спроса",
+      line: {color: cssVar("--st-plan"), dash: "dot", width: 2}, marker: {size: 5}},
+    {x: c.s.map((p) => p[0]), y: c.s.map((p) => p[1]), type: "scatter", mode: "lines", name: "Остаток (симуляция; на нуле — дефицит, продажи теряются)",
+      line: {color: cssVar("--st-ok"), width: 3, shape: "spline", smoothing: 0.4}, yaxis: "y2"},
+    {x: c.s.filter((p) => p[2] > 0).map((p) => p[0]), y: c.s.filter((p) => p[2] > 0).map((p) => p[2]),
+      type: "bar", name: "Ожидаемые приходы", marker: {color: cssVar("--chart-arr")}},
+  ];
+  // Полосы дефицита: месяцы, где остаток симуляции на нуле
+  const zero = [];
+  c.s.forEach((p, i) => {
+    if (p[1] > 0) return;
+    const next = c.s[i + 1] ? c.s[i + 1][0] : p[0];
+    const last = zero[zero.length - 1];
+    if (last && last.x1 === p[0]) last.x1 = next; else zero.push({x0: p[0], x1: next});
+  });
+  const gapShapes = zero.map((z) => ({type: "rect", xref: "x", yref: "paper", x0: z.x0, x1: z.x1, y0: 0, y1: 1, layer: "below",
+    fillcolor: cssVar("--st-short"), opacity: 0.13, line: {width: 0}}));
+  const gapNotes = zero.slice(0, 1).map((z) => ({x: z.x0, y: 0.9, xref: "x", yref: "paper", text: "дефицит", showarrow: false,
+    xanchor: "left", yanchor: "top", font: {size: 11, color: cssVar("--st-short")}}));
+  const axis = {gridcolor: line, linecolor: line, zerolinecolor: line, tickfont: {color: muted, size: 11}, title: {font: {color: muted, size: 11}}};
+  Plotly.react(box, traces, {
+    margin: {t: 8, l: wide ? 46 : 34, r: wide ? 50 : 40, b: 10}, barmode: "group", bargap: 0.25,
+    paper_bgcolor: "rgba(0,0,0,0)", plot_bgcolor: "rgba(0,0,0,0)", font: {color: ink, family: "Onest, system-ui, sans-serif", size: 12},
+    legend: {orientation: "h", y: -0.14, font: {size: wide ? 11 : 10, color: ink}},
+    xaxis: Object.assign({}, axis, {type: "date", tickformat: "%m.%y"}),
+    yaxis: Object.assign({}, axis, {title: {text: wide ? "шт./мес." : "", font: {color: muted, size: 11}}}),
+    yaxis2: Object.assign({}, axis, {title: {text: wide ? "остаток, шт." : "", font: {color: muted, size: 11}}, overlaying: "y", side: "right",
+      showgrid: false, zeroline: true, zerolinecolor: cssVar("--st-now")}),
+    shapes: gapShapes.concat([{type: "line", xref: "x", yref: "paper", x0: D.asof, x1: D.asof, y0: 0, y1: 1, line: {color: muted, width: 1, dash: "dash"}}]),
+    annotations: [{x: D.asof, y: 1, xref: "x", yref: "paper", text: "сегодня", showarrow: false, xanchor: "left", yanchor: "top",
+      font: {size: 11, color: muted}}].concat(gapNotes),
+  }, {displayModeBar: false, responsive: true});
+}
+function closeCard() {
+  $("scrim").className = "";
+  $("drawer").className = "";
+  $("drawer").setAttribute("aria-hidden", "true");
+  cardRow = null;
+}
+$("m-close").onclick = closeCard;
+$("scrim").onclick = closeCard;
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeCard(); });
+
+// Тема: выбор хранится в браузере, без выбора — как в системе
+(function theme() {
+  const root = document.documentElement;
+  try { const t = localStorage.getItem("zakupki-theme"); if (t) root.dataset.theme = t; } catch (e) { /* хранилище недоступно */ }
+  $("theme").onclick = () => {
+    const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    root.dataset.theme = dark ? "light" : "dark";
+    try { localStorage.setItem("zakupki-theme", root.dataset.theme); } catch (e) { /* хранилище недоступно */ }
+    if (cardRow) drawChart();
+  };
+})();
+
+// Подсветка текущего раздела в навигации: активен последний раздел, чей верх выше линии под шапкой
+(function nav() {
+  const links = [...document.querySelectorAll("#nav a")];
+  const secs = links.map((a) => [a, $(a.getAttribute("href").slice(1))]).filter((x) => x[1]);
+  const bar = document.querySelector(".topbar");
+  let lock = null, lockTimer = 0, cur = null;
+  const set = (a) => {
+    if (a === cur) return;
+    cur = a;
+    links.forEach((x) => x.classList.toggle("active", x === a));
+    if (a) a.scrollIntoView({block: "nearest", inline: "nearest"});
+  };
+  const update = () => {
+    if (lock || !secs.length) return;
+    const line = bar.getBoundingClientRect().bottom + 24;
+    let act = secs[0];
+    secs.forEach((x) => { if (x[1].getBoundingClientRect().top <= line) act = x; });
+    // Низ страницы: последний раздел может не дойти до линии
+    const end = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+    const last = secs[secs.length - 1];
+    if (end && last[1].getBoundingClientRect().top < window.innerHeight) act = last;
+    set(act[0]);
+  };
+  // Клик по пункту: активен он, пока не закончится прокрутка к нему
+  links.forEach((a) => a.addEventListener("click", () => {
+    lock = a; set(a);
+    clearTimeout(lockTimer);
+    lockTimer = setTimeout(() => { lock = null; }, 1500);
+  }));
+  let raf = 0;
+  window.addEventListener("scroll", () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; update(); }); }, {passive: true});
+  window.addEventListener("scrollend", () => { if (lock) { lock = null; clearTimeout(lockTimer); } });
+  window.addEventListener("wheel", () => { lock = null; }, {passive: true});
+  window.addEventListener("touchstart", () => { lock = null; }, {passive: true});
+  update();
+})();
+window.renderMs = Math.round(performance.now() - T0);
+</script>
+</body>
+</html>
